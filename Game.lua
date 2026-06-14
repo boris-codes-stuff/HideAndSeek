@@ -492,6 +492,7 @@ function HS.Game.ApplyGameUI()
         HS.Game.originalCVars = {
             nameplateShowFriends = GetCVar("nameplateShowFriends"),
             nameplateShowEnemies = GetCVar("nameplateShowEnemies"),
+            nameplateShowAll = GetCVar("nameplateShowAll"),
             UnitNameNPC = GetCVar("UnitNameNPC"),
             UnitNameInteractiveNPC = GetCVar("UnitNameInteractiveNPC"),
             UnitNameHostleNPC = GetCVar("UnitNameHostleNPC"),
@@ -509,6 +510,7 @@ function HS.Game.ApplyGameUI()
 
     SetCVar("nameplateShowFriends", 0)
     SetCVar("nameplateShowEnemies", 0)
+    SetCVar("nameplateShowAll", 0)
     SetCVar("UnitNameNPC", 0)
     SetCVar("UnitNameInteractiveNPC", 0)
     SetCVar("UnitNameHostleNPC", 0)
@@ -530,6 +532,20 @@ function HS.Game.ApplyGameUI()
             end
         end)
         HS.Game._tooltipHooked = true
+    end
+
+    if not HS.Game._nameplateHooked then
+        local function hideNameplateName(_, unit)
+            local phase = HS.Game.state.phase
+            if phase ~= HS.PHASE.HIDING and phase ~= HS.PHASE.SEEKING then return end
+            local np = C_NamePlate and C_NamePlate.GetNamePlateForUnit(unit)
+            if np then np:Hide() end
+        end
+        local npWatcher = CreateFrame("Frame")
+        npWatcher:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+        npWatcher:SetScript("OnEvent", hideNameplateName)
+        HS.Game._nameplateWatcher = npWatcher
+        HS.Game._nameplateHooked = true
     end
 
     for _, name in ipairs(HIDDEN_FRAMES) do
