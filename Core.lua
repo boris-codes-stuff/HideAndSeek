@@ -194,6 +194,7 @@ events:RegisterEvent("PLAYER_LOGOUT")
 events:RegisterEvent("READY_CHECK")
 events:RegisterEvent("READY_CHECK_CONFIRM")
 events:RegisterEvent("READY_CHECK_FINISHED")
+events:RegisterEvent("PLAYER_TARGET_CHANGED")
 
 events:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -254,6 +255,14 @@ events:SetScript("OnEvent", function(self, event, ...)
             HS.Game.OnReadyCheckFinished()
         elseif HS.Game._hideReadyCheck then
             HS.Game.OnHideReadyCheckFinished()
+        end
+
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        if HS.Game.state.allowMovement and HS.Game.state.phase == HS.PHASE.SEEKING then
+            local me = UnitName("player")
+            if HS.Game.state.seeker == me and UnitExists("target") then
+                HS.Game.TryTag()
+            end
         end
 
     elseif event == "PLAYER_LOGOUT" then

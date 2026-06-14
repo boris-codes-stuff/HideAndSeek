@@ -140,6 +140,16 @@ local function CreateLobby()
     f.playerListFrame = plFrame
     f.playerTexts = {}
 
+    -- Options
+    local moveCheck = CreateFrame("CheckButton", "HAS_MoveCheck", f, "UICheckButtonTemplate")
+    moveCheck:SetSize(24, 24)
+    moveCheck:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 40)
+    moveCheck:SetChecked(false)
+    f.moveCheck = moveCheck
+
+    local moveLabel = Text(f, "Allow Movement (tag by clicking)", 10, C.white, "LEFT", moveCheck, "RIGHT", 2, 0)
+    f.moveLabel = moveLabel
+
     -- Bottom buttons
     local btnBar = CreateFrame("Frame", nil, f)
     btnBar:SetHeight(32)
@@ -148,10 +158,11 @@ local function CreateLobby()
 
     f.createBtn = Btn(btnBar, "Create Game", 105, 26, function()
         local preset = HS.UI.selectedPreset
+        local allowMove = moveCheck:GetChecked()
         if preset then
-            HS.Game.Create(preset.name, preset.hideTime, preset.seekTime)
+            HS.Game.Create(preset.name, preset.hideTime, preset.seekTime, allowMove)
         else
-            HS.Game.Create("Custom", HS.DEFAULTS.hideTime, HS.DEFAULTS.seekTime)
+            HS.Game.Create("Custom", HS.DEFAULTS.hideTime, HS.DEFAULTS.seekTime, allowMove)
         end
     end)
     f.createBtn:SetPoint("LEFT", btnBar, "LEFT")
@@ -641,7 +652,9 @@ function HS.UI.UpdateHUD()
     end
 
     if state.seeker == me then
-        if state.maxTagAttempts > 0 then
+        if state.allowMovement then
+            f.roleText:SetText("Click a player to tag!")
+        elseif state.maxTagAttempts > 0 then
             local attemptsLeft = state.maxTagAttempts - state.tagAttempts
             if attemptsLeft > 0 then
                 f.roleText:SetText("/point to tag! " .. attemptsLeft .. " guesses left")
@@ -653,7 +666,11 @@ function HS.UI.UpdateHUD()
         end
     elseif state.players[me] then
         if state.players[me].role == HS.ROLE.HIDER then
-            f.roleText:SetText("Stay hidden! Don't move!")
+            if state.allowMovement then
+                f.roleText:SetText("Run and hide!")
+            else
+                f.roleText:SetText("Stay hidden! Don't move!")
+            end
         elseif state.players[me].role == HS.ROLE.FOUND then
             f.roleText:SetText("You were found!")
         end
