@@ -147,7 +147,7 @@ local function CreateLobby()
     moveCheck:SetChecked(false)
     f.moveCheck = moveCheck
 
-    local moveLabel = Text(f, "Allow Movement (tag by clicking)", 10, C.white, "LEFT", moveCheck, "RIGHT", 2, 0)
+    local moveLabel = Text(f, "Allow Movement (hiders can run)", 10, C.white, "LEFT", moveCheck, "RIGHT", 2, 0)
     f.moveLabel = moveLabel
 
     -- Bottom buttons
@@ -652,17 +652,15 @@ function HS.UI.UpdateHUD()
     end
 
     if state.seeker == me then
-        if state.allowMovement then
-            f.roleText:SetText("Click a player to tag!")
-        elseif state.maxTagAttempts > 0 then
+        if state.maxTagAttempts > 0 then
             local attemptsLeft = state.maxTagAttempts - state.tagAttempts
             if attemptsLeft > 0 then
-                f.roleText:SetText("/point to tag! " .. attemptsLeft .. " guesses left")
+                f.roleText:SetText("/point or click to tag! " .. attemptsLeft .. " guesses left")
             else
                 f.roleText:SetText("|cFFFF0000No guesses left! Wait for timer.|r")
             end
         else
-            f.roleText:SetText("/point at a player to tag!")
+            f.roleText:SetText("/point or click to tag!")
         end
     elseif state.players[me] then
         if state.players[me].role == HS.ROLE.HIDER then

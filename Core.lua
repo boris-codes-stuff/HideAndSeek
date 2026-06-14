@@ -262,7 +262,7 @@ events:SetScript("OnEvent", function(self, event, ...)
         if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
             HS.Game.HideRevealingFrames()
         end
-        if HS.Game.state.allowMovement and phase == HS.PHASE.SEEKING then
+        if phase == HS.PHASE.SEEKING then
             local me = UnitName("player")
             if HS.Game.state.seeker == me and UnitExists("target") then
                 HS.Game.TryTag()

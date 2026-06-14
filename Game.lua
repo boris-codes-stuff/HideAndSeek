@@ -578,12 +578,7 @@ function HS.Game.StartSeeking()
     state.timerStart = GetTime()
     state.lastTagTime = 0
     state.tagAttempts = 0
-
-    if state.allowMovement then
-        state.maxTagAttempts = 0
-    else
-        state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
-    end
+    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
 
     local playerName = UnitName("player")
     if not state.allowMovement and state.players[playerName] and state.players[playerName].role == HS.ROLE.HIDER then
@@ -622,71 +617,55 @@ function HS.Game.TryTag()
         return
     end
 
-    if not state.allowMovement then
-        local now = GetTime()
-        if now - state.lastTagTime < HS.DEFAULTS.tagCooldown then
-            local remaining = math.ceil(HS.DEFAULTS.tagCooldown - (now - state.lastTagTime))
-            HS.Util.Warn("Tag on cooldown: " .. remaining .. "s remaining.")
-            return
-        end
-
-        if state.maxTagAttempts > 0 and state.tagAttempts >= state.maxTagAttempts then
-            HS.Util.Warn("No guesses left! Wait for the timer to end.")
-            return
-        end
-
-        state.lastTagTime = now
+    local now = GetTime()
+    if now - state.lastTagTime < HS.DEFAULTS.tagCooldown then
+        local remaining = math.ceil(HS.DEFAULTS.tagCooldown - (now - state.lastTagTime))
+        HS.Util.Warn("Tag on cooldown: " .. remaining .. "s remaining.")
+        return
     end
 
+    if state.maxTagAttempts > 0 and state.tagAttempts >= state.maxTagAttempts then
+        HS.Util.Warn("No guesses left! Wait for the timer to end.")
+        return
+    end
+
+    state.lastTagTime = now
+
     if not UnitExists("target") then
-        if not state.allowMovement then
-            HS.Util.Warn("No target! Select a player first.")
-        end
+        HS.Util.Warn("No target! Select a player first.")
         return
     end
 
     if not UnitIsPlayer("target") and not state.testMode then
-        if not state.allowMovement then
-            state.tagAttempts = state.tagAttempts + 1
-            local attemptsLeft = state.maxTagAttempts - state.tagAttempts
-            PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
-            HS.Util.Warn("That's an NPC! (" .. attemptsLeft .. " guesses left)")
-            if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
-        end
+        state.tagAttempts = state.tagAttempts + 1
+        local attemptsLeft = state.maxTagAttempts - state.tagAttempts
+        PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
+        HS.Util.Warn("That's an NPC! (" .. attemptsLeft .. " guesses left)")
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
 
     if not HS.Util.IsInTagRange("target") then
-        if not state.allowMovement then
-            UIErrorsFrame:AddMessage("Too far away!", 1, 0.1, 0.1)
-            HS.Util.Warn("Get closer! No guess used.")
-        end
+        UIErrorsFrame:AddMessage("Too far away!", 1, 0.1, 0.1)
+        HS.Util.Warn("Get closer! No guess used.")
         return
     end
 
+    state.tagAttempts = state.tagAttempts + 1
+    local attemptsLeft = state.maxTagAttempts - state.tagAttempts
+
     local targetName = UnitName("target")
 
-    if not state.allowMovement then
-        state.tagAttempts = state.tagAttempts + 1
-        local attemptsLeft = state.maxTagAttempts - state.tagAttempts
-
-        if not state.players[targetName] then
-            PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
-            HS.Util.Warn(targetName .. " is not in this game. (" .. attemptsLeft .. " guesses left)")
-            if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
-            return
-        end
-    else
-        if not state.players[targetName] then
-            return
-        end
+    if not state.players[targetName] then
+        PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
+        HS.Util.Warn(targetName .. " is not in this game. (" .. attemptsLeft .. " guesses left)")
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        return
     end
 
     if state.players[targetName].role == HS.ROLE.FOUND then
-        if not state.allowMovement then
-            state.tagAttempts = state.tagAttempts - 1
-            HS.Util.Warn(targetName .. " was already found.")
-        end
+        state.tagAttempts = state.tagAttempts - 1
+        HS.Util.Warn(targetName .. " was already found.")
         return
     end
 
@@ -1231,12 +1210,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     state.timerStart = GetTime()
     state.lastTagTime = 0
     state.tagAttempts = 0
-
-    if state.allowMovement then
-        state.maxTagAttempts = 0
-    else
-        state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
-    end
+    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
 
     local playerName = UnitName("player")
     if not state.allowMovement and state.players[playerName] and state.players[playerName].role == HS.ROLE.HIDER then
@@ -1246,11 +1220,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     end
 
     if playerName == state.seeker then
-        if state.allowMovement then
-            HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Click them to tag!")
-        else
-            HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Use /point to tag them.")
-        end
+        HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Use /point or click to tag them.")
         if HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
             PlaySoundFile(HS.SOUNDS.seekStartFile, "Master")
         end
