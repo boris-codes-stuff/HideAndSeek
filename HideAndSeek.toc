@@ -1,0 +1,16 @@
+## Interface: 11508
+## Title: Hide&Seek
+## Notes: Play Hide and Seek with your party in WoW Classic
+## Author: Boris
+## Version: 1.0.0
+## SavedVariables: HideAndSeekDB
+
+Config.lua
+Util.lua
+Presets.lua
+Boundaries.lua
+Comm.lua
+Game.lua
+AntiCheat.lua
+UI.lua
+Core.lua
