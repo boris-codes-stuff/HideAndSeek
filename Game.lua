@@ -475,6 +475,25 @@ function HS.Game.ApplyGameUI()
     if TargetFrame then TargetFrame:SetAlpha(0); TargetFrame:EnableMouse(false) end
     if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
 
+    if not HS.Game._targetFrameHooked then
+        TargetFrame:HookScript("OnShow", function(self)
+            local phase = HS.Game.state.phase
+            if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
+                self:SetAlpha(0)
+                self:EnableMouse(false)
+            end
+        end)
+        hooksecurefunc("TargetFrame_Update", function()
+            local phase = HS.Game.state.phase
+            if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
+                TargetFrame:SetAlpha(0)
+                TargetFrame:EnableMouse(false)
+                if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
+            end
+        end)
+        HS.Game._targetFrameHooked = true
+    end
+
     if not HS.Game.bindFrame then
         HS.Game.bindFrame = CreateFrame("Frame", "HASBindFrame", UIParent)
         CreateFrame("Button", "HAS_DummyBtn", UIParent)

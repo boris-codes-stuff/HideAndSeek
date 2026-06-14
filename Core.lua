@@ -258,7 +258,11 @@ events:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif event == "PLAYER_TARGET_CHANGED" then
-        if HS.Game.state.allowMovement and HS.Game.state.phase == HS.PHASE.SEEKING then
+        local phase = HS.Game.state.phase
+        if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
+            HS.Game.HideRevealingFrames()
+        end
+        if HS.Game.state.allowMovement and phase == HS.PHASE.SEEKING then
             local me = UnitName("player")
             if HS.Game.state.seeker == me and UnitExists("target") then
                 HS.Game.TryTag()
