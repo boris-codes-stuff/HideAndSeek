@@ -521,12 +521,17 @@ function HS.UI.UpdateLobby()
     local isIdle = state.phase == HS.PHASE.IDLE
     local inLobby = state.phase == HS.PHASE.LOBBY
 
+    if state.phase == HS.PHASE.GAME_END then
+        HS.Game.Reset()
+        isIdle = true
+    end
+
     if isIdle then
         f.createBtn:Show()
         f.joinBtn:Hide()
         f.startBtn:Hide()
         f.cancelBtn:Hide()
-    elseif inLobby then
+    elseif inLobby or state.phase == HS.PHASE.ROUND_END then
         f.createBtn:Hide()
         if inGame then
             f.joinBtn:Hide()

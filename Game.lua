@@ -447,6 +447,14 @@ function HS.Game.ApplyGameUI()
     if CompactRaidFrameContainer then CompactRaidFrameContainer:Hide() end
     if TargetFrame then TargetFrame:SetAlpha(0); TargetFrame:EnableMouse(false) end
     if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
+
+    if not HS.Game.bindFrame then
+        HS.Game.bindFrame = CreateFrame("Frame", "HASBindFrame", UIParent)
+        CreateFrame("Button", "HAS_DummyBtn", UIParent)
+    end
+    for i = 1, 5 do
+        SetOverrideBindingClick(HS.Game.bindFrame, true, "F" .. i, "HAS_DummyBtn")
+    end
 end
 
 function HS.Game.RestoreUI()
@@ -466,6 +474,10 @@ function HS.Game.RestoreUI()
     if CompactRaidFrameContainer then CompactRaidFrameContainer:Show() end
     if TargetFrame then TargetFrame:SetAlpha(1); TargetFrame:EnableMouse(true) end
     if TargetFrameToT then TargetFrameToT:SetAlpha(1) end
+
+    if HS.Game.bindFrame then
+        ClearOverrideBindings(HS.Game.bindFrame)
+    end
 end
 
 function HS.Game.HideRevealingFrames()
