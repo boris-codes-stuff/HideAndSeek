@@ -435,6 +435,8 @@ function HS.Game.ApplyGameUI()
             UnitNamePlayerGuild = GetCVar("UnitNamePlayerGuild"),
             UnitNamePlayerPVPTitle = GetCVar("UnitNamePlayerPVPTitle"),
             UnitNameNonCombatCreatureName = GetCVar("UnitNameNonCombatCreatureName"),
+            UnitNameOwn = GetCVar("UnitNameOwn"),
+            ShowPlayerTitles = GetCVar("ShowPlayerTitles"),
         }
     end
 
@@ -450,6 +452,18 @@ function HS.Game.ApplyGameUI()
     SetCVar("UnitNamePlayerGuild", 0)
     SetCVar("UnitNamePlayerPVPTitle", 0)
     SetCVar("UnitNameNonCombatCreatureName", 0)
+    SetCVar("UnitNameOwn", 0)
+    SetCVar("ShowPlayerTitles", 0)
+
+    if not HS.Game._tooltipHooked then
+        GameTooltip:HookScript("OnTooltipSetUnit", function(self)
+            local phase = HS.Game.state.phase
+            if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
+                self:Hide()
+            end
+        end)
+        HS.Game._tooltipHooked = true
+    end
 
     if MinimapCluster then MinimapCluster:Hide() end
     for i = 1, 4 do
