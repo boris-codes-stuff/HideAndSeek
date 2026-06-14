@@ -646,8 +646,7 @@ function HS.Game.TryTag()
     end
 
     if not HS.Util.IsInTagRange("target") then
-        UIErrorsFrame:AddMessage("Too far away!", 1, 0.1, 0.1)
-        HS.Util.Warn("Get closer! No guess used.")
+        RaidNotice_AddMessage(RaidWarningFrame, "Too far away!", ChatTypeInfo["RAID_WARNING"])
         return
     end
 
