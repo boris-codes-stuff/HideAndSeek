@@ -426,20 +426,30 @@ function HS.Game.ApplyGameUI()
             nameplateShowFriends = GetCVar("nameplateShowFriends"),
             nameplateShowEnemies = GetCVar("nameplateShowEnemies"),
             UnitNameNPC = GetCVar("UnitNameNPC"),
+            UnitNameInteractiveNPC = GetCVar("UnitNameInteractiveNPC"),
+            UnitNameHostleNPC = GetCVar("UnitNameHostleNPC"),
             UnitNameFriendlyPlayerName = GetCVar("UnitNameFriendlyPlayerName"),
             UnitNameEnemyPlayerName = GetCVar("UnitNameEnemyPlayerName"),
             UnitNameFriendlyPetName = GetCVar("UnitNameFriendlyPetName"),
             UnitNameFriendlyGuardianName = GetCVar("UnitNameFriendlyGuardianName"),
+            UnitNamePlayerGuild = GetCVar("UnitNamePlayerGuild"),
+            UnitNamePlayerPVPTitle = GetCVar("UnitNamePlayerPVPTitle"),
+            UnitNameNonCombatCreatureName = GetCVar("UnitNameNonCombatCreatureName"),
         }
     end
 
     SetCVar("nameplateShowFriends", 0)
     SetCVar("nameplateShowEnemies", 0)
     SetCVar("UnitNameNPC", 0)
+    SetCVar("UnitNameInteractiveNPC", 0)
+    SetCVar("UnitNameHostleNPC", 0)
     SetCVar("UnitNameFriendlyPlayerName", 0)
     SetCVar("UnitNameEnemyPlayerName", 0)
     SetCVar("UnitNameFriendlyPetName", 0)
     SetCVar("UnitNameFriendlyGuardianName", 0)
+    SetCVar("UnitNamePlayerGuild", 0)
+    SetCVar("UnitNamePlayerPVPTitle", 0)
+    SetCVar("UnitNameNonCombatCreatureName", 0)
 
     if MinimapCluster then MinimapCluster:Hide() end
     for i = 1, 4 do
