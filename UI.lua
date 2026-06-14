@@ -116,13 +116,6 @@ local function CreateLobby()
         end
     end
 
-    -- Custom map button
-    local customBtn = Btn(grid, "Custom Map...", btnW, btnH, function()
-        HS.Boundaries.StartSetup()
-    end)
-    customBtn:SetPoint("TOPLEFT", grid, "TOPLEFT", 0, yOff)
-    customBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
-
     -- Selected map info
     local infoFrame = CreateFrame("Frame", nil, f, "BackdropTemplate")
     infoFrame:SetHeight(72)
