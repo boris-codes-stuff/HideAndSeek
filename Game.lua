@@ -472,26 +472,34 @@ function HS.Game.ApplyGameUI()
     end
     if CompactRaidFrameManager then CompactRaidFrameManager:Hide() end
     if CompactRaidFrameContainer then CompactRaidFrameContainer:Hide() end
-    if TargetFrame then TargetFrame:SetAlpha(0); TargetFrame:EnableMouse(false) end
-    if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
-
-    if not HS.Game._targetFrameHooked then
-        TargetFrame:HookScript("OnShow", function(self)
-            local phase = HS.Game.state.phase
-            if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
-                self:SetAlpha(0)
-                self:EnableMouse(false)
-            end
-        end)
-        hooksecurefunc("TargetFrame_Update", function()
-            local phase = HS.Game.state.phase
-            if phase == HS.PHASE.HIDING or phase == HS.PHASE.SEEKING then
-                TargetFrame:SetAlpha(0)
-                TargetFrame:EnableMouse(false)
-                if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
-            end
-        end)
-        HS.Game._targetFrameHooked = true
+    if TargetFrame then
+        TargetFrame:EnableMouse(false)
+        if not HS.Game.targetCover then
+            local cover = CreateFrame("Frame", "HAS_TargetCover", UIParent, "BackdropTemplate")
+            cover:SetFrameStrata("TOOLTIP")
+            cover:SetFrameLevel(100)
+            cover:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
+            cover:SetBackdropColor(0, 0, 0, 1)
+            cover:EnableMouse(false)
+            cover:SetPoint("TOPLEFT", TargetFrame, "TOPLEFT", 0, 0)
+            cover:SetPoint("BOTTOMRIGHT", TargetFrame, "BOTTOMRIGHT", 0, 0)
+            HS.Game.targetCover = cover
+        end
+        HS.Game.targetCover:Show()
+    end
+    if TargetFrameToT then
+        if not HS.Game.totCover then
+            local cover = CreateFrame("Frame", "HAS_ToTCover", UIParent, "BackdropTemplate")
+            cover:SetFrameStrata("TOOLTIP")
+            cover:SetFrameLevel(100)
+            cover:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
+            cover:SetBackdropColor(0, 0, 0, 1)
+            cover:EnableMouse(false)
+            cover:SetPoint("TOPLEFT", TargetFrameToT, "TOPLEFT", 0, 0)
+            cover:SetPoint("BOTTOMRIGHT", TargetFrameToT, "BOTTOMRIGHT", 0, 0)
+            HS.Game.totCover = cover
+        end
+        HS.Game.totCover:Show()
     end
 
     if not HS.Game.bindFrame then
@@ -518,8 +526,9 @@ function HS.Game.RestoreUI()
     end
     if CompactRaidFrameManager then CompactRaidFrameManager:Show() end
     if CompactRaidFrameContainer then CompactRaidFrameContainer:Show() end
-    if TargetFrame then TargetFrame:SetAlpha(1); TargetFrame:EnableMouse(true) end
-    if TargetFrameToT then TargetFrameToT:SetAlpha(1) end
+    if TargetFrame then TargetFrame:EnableMouse(true) end
+    if HS.Game.targetCover then HS.Game.targetCover:Hide() end
+    if HS.Game.totCover then HS.Game.totCover:Hide() end
 
     if HS.Game.bindFrame then
         ClearOverrideBindings(HS.Game.bindFrame)
@@ -534,8 +543,9 @@ function HS.Game.HideRevealingFrames()
     end
     if CompactRaidFrameManager then CompactRaidFrameManager:Hide() end
     if CompactRaidFrameContainer then CompactRaidFrameContainer:Hide() end
-    if TargetFrame then TargetFrame:SetAlpha(0); TargetFrame:EnableMouse(false) end
-    if TargetFrameToT then TargetFrameToT:SetAlpha(0) end
+    if TargetFrame then TargetFrame:EnableMouse(false) end
+    if HS.Game.targetCover then HS.Game.targetCover:Show() end
+    if HS.Game.totCover then HS.Game.totCover:Show() end
 end
 
 -- ============================================================================
