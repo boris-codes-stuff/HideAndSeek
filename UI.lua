@@ -140,10 +140,39 @@ local function CreateLobby()
     f.playerListFrame = plFrame
     f.playerTexts = {}
 
+    -- Seeker selector (host only)
+    local seekerLabel = Text(f, "Seeker:", 10, C.gold, "BOTTOMLEFT", f, "BOTTOMLEFT", 10, 72)
+    f.seekerLabel = seekerLabel
+
+    local seekerBtn = Btn(f, "Random", 120, 22, function()
+        local names = {}
+        for name in pairs(HS.Game.state.players) do
+            table.insert(names, name)
+        end
+        table.sort(names)
+        table.insert(names, 1, "Random")
+        local current = HS.Game.state.nextSeeker or "Random"
+        local idx = 1
+        for i, n in ipairs(names) do
+            if n == current then idx = i; break end
+        end
+        idx = idx + 1
+        if idx > #names then idx = 1 end
+        if names[idx] == "Random" then
+            HS.Game.state.nextSeeker = nil
+        else
+            HS.Game.state.nextSeeker = names[idx]
+        end
+        f.seekerBtn:SetText(names[idx])
+    end)
+    seekerBtn:SetPoint("LEFT", seekerLabel, "RIGHT", 4, 0)
+    seekerBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
+    f.seekerBtn = seekerBtn
+
     -- Options
     local moveCheck = CreateFrame("CheckButton", "HAS_MoveCheck", f, "UICheckButtonTemplate")
     moveCheck:SetSize(24, 24)
-    moveCheck:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 40)
+    moveCheck:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 42)
     moveCheck:SetChecked(false)
     f.moveCheck = moveCheck
 
@@ -220,6 +249,7 @@ local function CreateHUD()
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
     f:SetFrameStrata("HIGH")
+    f:SetIgnoreParentAlpha(true)
     Backdrop(f, {0.05, 0.05, 0.05, 0.92})
 
     -- Header bar
@@ -289,6 +319,7 @@ local function CreateBlindfold()
     f:SetAllPoints()
     f:SetFrameStrata("FULLSCREEN_DIALOG")
     f:SetFrameLevel(100)
+    f:SetIgnoreParentAlpha(true)
     f:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
     f:SetBackdropColor(0, 0, 0, 1)
     f:EnableMouse(false)
@@ -379,6 +410,7 @@ local function CreateBoundaryWarning()
     f:SetSize(340, 36)
     f:SetPoint("TOP", UIParent, "TOP", 0, -130)
     f:SetFrameStrata("FULLSCREEN_DIALOG")
+    f:SetIgnoreParentAlpha(true)
     Backdrop(f, {0.7, 0.1, 0.1, 0.92}, {1, 0, 0, 1})
 
     f.text = Text(f, "", 12, C.white, "CENTER")
@@ -526,8 +558,21 @@ function HS.UI.UpdateLobby()
         if f.playerTexts[j] then f.playerTexts[j]:Hide() end
     end
 
-    -- Button visibility
+    -- Seeker selector
+    if state.nextSeeker and not state.players[state.nextSeeker] then
+        state.nextSeeker = nil
+    end
     local isHost = state.host == me
+    if isHost and (state.phase == HS.PHASE.LOBBY or state.phase == HS.PHASE.ROUND_END) then
+        f.seekerLabel:Show()
+        f.seekerBtn:Show()
+        f.seekerBtn:SetText(state.nextSeeker or "Random")
+    else
+        f.seekerLabel:Hide()
+        f.seekerBtn:Hide()
+    end
+
+    -- Button visibility
     local inGame = state.players[me] ~= nil
     local isIdle = state.phase == HS.PHASE.IDLE
     local inLobby = state.phase == HS.PHASE.LOBBY
@@ -754,11 +799,17 @@ end
 function HS.UI.ShowBoundaryWarning(show, duration)
     if not HS.UI.boundaryWarning then return end
     if show then
-        local grace = HS.DEFAULTS.outOfBoundsGrace - (duration or 0)
-        if grace > 0 then
-            HS.UI.boundaryWarning.text:SetText("OUT OF BOUNDS! Return in " .. math.ceil(grace) .. "s!")
+        local me = UnitName("player")
+        if HS.Game.state.seeker == me then
+            RaidNotice_AddMessage(RaidWarningFrame, "Out of bounds!", ChatTypeInfo["RAID_WARNING"])
+            return
         else
-            HS.UI.boundaryWarning.text:SetText("OUT OF BOUNDS! Violation reported!")
+            local grace = HS.DEFAULTS.outOfBoundsGrace - (duration or 0)
+            if grace > 0 then
+                HS.UI.boundaryWarning.text:SetText("OUT OF BOUNDS! Return in " .. math.ceil(grace) .. "s!")
+            else
+                HS.UI.boundaryWarning.text:SetText("OUT OF BOUNDS! Violation reported!")
+            end
         end
         HS.UI.boundaryWarning:Show()
     else

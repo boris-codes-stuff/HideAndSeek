@@ -21,6 +21,7 @@ HS.Game.state = {
     testMode = false,
     readyHiders = {},
     allowMovement = false,
+    nextSeeker = nil,
 }
 
 local state = HS.Game.state
@@ -48,6 +49,7 @@ function HS.Game.Reset()
     state.testMode = false
     state.readyHiders = {}
     state.allowMovement = false
+    state.nextSeeker = nil
     HS.Game.RestoreUI()
     HS.Boundaries.Clear()
 end
@@ -227,7 +229,15 @@ end
 
 function HS.Game.StartCountdown()
     state.round = state.round + 1
-    state.seeker = HS.Game.SelectSeeker()
+    if state.nextSeeker and state.players[state.nextSeeker] then
+        state.seeker = state.nextSeeker
+        if state.players[state.seeker] then
+            state.players[state.seeker].seekCount = (state.players[state.seeker].seekCount or 0) + 1
+            state.players[state.seeker].lastSeekRound = state.round
+        end
+    else
+        state.seeker = HS.Game.SelectSeeker()
+    end
     state.foundCount = 0
     state.totalHiders = 0
 
@@ -559,9 +569,28 @@ function HS.Game.ApplyGameUI()
     for i = 1, 5 do
         SetOverrideBindingClick(HS.Game.bindFrame, true, "F" .. i, "HAS_DummyBtn")
     end
+
+    -- Hide entire UI (Alt+Z equivalent)
+    if not HS.Game._savedUIAlpha then
+        HS.Game._savedUIAlpha = UIParent:GetAlpha()
+    end
+    UIParent:SetAlpha(0)
+    SetOverrideBindingClick(HS.Game.bindFrame, true, "ALT-Z", "HAS_DummyBtn")
+
+    if RaidWarningFrame then
+        RaidWarningFrame:SetIgnoreParentAlpha(true)
+    end
 end
 
 function HS.Game.RestoreUI()
+    if HS.Game._savedUIAlpha then
+        UIParent:SetAlpha(HS.Game._savedUIAlpha)
+        HS.Game._savedUIAlpha = nil
+    end
+    if RaidWarningFrame then
+        RaidWarningFrame:SetIgnoreParentAlpha(false)
+    end
+
     if HS.Game.originalCVars then
         for cvar, value in pairs(HS.Game.originalCVars) do
             SetCVar(cvar, value)
@@ -947,6 +976,18 @@ end
 -- ============================================================================
 
 function HS.Game.OnUpdate()
+    -- Enforce UI hidden for seeker (re-apply every tick so it can't be bypassed)
+    if state.phase == HS.PHASE.HIDING or state.phase == HS.PHASE.SEEKING then
+        local me = UnitName("player")
+        if state.seeker == me and UIParent:GetAlpha() > 0 then
+            UIParent:SetAlpha(0)
+            if not HS.Game._lastUITamperReport or (GetTime() - HS.Game._lastUITamperReport) > 5 then
+                HS.Game._lastUITamperReport = GetTime()
+                HS.Comm.Send(HS.Comm.MSG.CHEAT, me .. "|ui_tamper")
+            end
+        end
+    end
+
     if state.phase == HS.PHASE.COUNTDOWN then
         local elapsed = GetTime() - state.timerStart
         local remaining = state.timer - elapsed
