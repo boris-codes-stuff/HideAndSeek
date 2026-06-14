@@ -417,8 +417,75 @@ function HS.Game.PeekNextSeeker()
 end
 
 -- ============================================================================
--- UI CONTROL (CVars)
+-- UI CONTROL (hidden parent reparenting + CVars)
 -- ============================================================================
+
+local HIDDEN_FRAMES = {
+    "TargetFrame",
+    "TargetFrameToT",
+    "MinimapCluster",
+    "PartyMemberFrame1",
+    "PartyMemberFrame2",
+    "PartyMemberFrame3",
+    "PartyMemberFrame4",
+    "CompactRaidFrameManager",
+    "CompactRaidFrameContainer",
+}
+
+local function ensureHiddenParent()
+    if HS.Game._hiddenParent then return HS.Game._hiddenParent end
+    local hp = CreateFrame("Frame", "HAS_HiddenParent", UIParent)
+    hp:Hide()
+    hp:SetAlpha(0)
+    hp:EnableMouse(false)
+    HS.Game._hiddenParent = hp
+    return hp
+end
+
+local function reparentHide(frameName)
+    local frame = _G[frameName]
+    if not frame then return end
+
+    if not HS.Game._frameSnapshots then HS.Game._frameSnapshots = {} end
+    if HS.Game._frameSnapshots[frameName] then return end
+
+    local numPoints = frame:GetNumPoints()
+    local points = {}
+    for i = 1, numPoints do
+        local point, relativeTo, relativePoint, xOff, yOff = frame:GetPoint(i)
+        points[i] = {point, relativeTo, relativePoint, xOff, yOff}
+    end
+
+    HS.Game._frameSnapshots[frameName] = {
+        parent = frame:GetParent(),
+        points = points,
+        wasShown = frame:IsShown(),
+        mouseEnabled = frame:IsMouseEnabled(),
+    }
+
+    frame:SetParent(ensureHiddenParent())
+    frame:Hide()
+    frame:EnableMouse(false)
+end
+
+local function reparentRestore(frameName)
+    if not HS.Game._frameSnapshots then return end
+    local snap = HS.Game._frameSnapshots[frameName]
+    if not snap then return end
+
+    local frame = _G[frameName]
+    if not frame then return end
+
+    frame:SetParent(snap.parent)
+    frame:ClearAllPoints()
+    for _, p in ipairs(snap.points) do
+        frame:SetPoint(p[1], p[2], p[3], p[4], p[5])
+    end
+    frame:EnableMouse(snap.mouseEnabled)
+    if snap.wasShown then frame:Show() end
+
+    HS.Game._frameSnapshots[frameName] = nil
+end
 
 function HS.Game.ApplyGameUI()
     if not HS.Game.originalCVars then
@@ -465,41 +532,8 @@ function HS.Game.ApplyGameUI()
         HS.Game._tooltipHooked = true
     end
 
-    if MinimapCluster then MinimapCluster:Hide() end
-    for i = 1, 4 do
-        local frame = _G["PartyMemberFrame" .. i]
-        if frame then frame:Hide() end
-    end
-    if CompactRaidFrameManager then CompactRaidFrameManager:Hide() end
-    if CompactRaidFrameContainer then CompactRaidFrameContainer:Hide() end
-    if TargetFrame then
-        TargetFrame:EnableMouse(false)
-        if not HS.Game.targetCover then
-            local cover = CreateFrame("Frame", "HAS_TargetCover", UIParent, "BackdropTemplate")
-            cover:SetFrameStrata("TOOLTIP")
-            cover:SetFrameLevel(100)
-            cover:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
-            cover:SetBackdropColor(0, 0, 0, 1)
-            cover:EnableMouse(false)
-            cover:SetPoint("TOPLEFT", TargetFrame, "TOPLEFT", 0, 0)
-            cover:SetPoint("BOTTOMRIGHT", TargetFrame, "BOTTOMRIGHT", 0, 0)
-            HS.Game.targetCover = cover
-        end
-        HS.Game.targetCover:Show()
-    end
-    if TargetFrameToT then
-        if not HS.Game.totCover then
-            local cover = CreateFrame("Frame", "HAS_ToTCover", UIParent, "BackdropTemplate")
-            cover:SetFrameStrata("TOOLTIP")
-            cover:SetFrameLevel(100)
-            cover:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
-            cover:SetBackdropColor(0, 0, 0, 1)
-            cover:EnableMouse(false)
-            cover:SetPoint("TOPLEFT", TargetFrameToT, "TOPLEFT", 0, 0)
-            cover:SetPoint("BOTTOMRIGHT", TargetFrameToT, "BOTTOMRIGHT", 0, 0)
-            HS.Game.totCover = cover
-        end
-        HS.Game.totCover:Show()
+    for _, name in ipairs(HIDDEN_FRAMES) do
+        reparentHide(name)
     end
 
     if not HS.Game.bindFrame then
@@ -519,16 +553,9 @@ function HS.Game.RestoreUI()
         HS.Game.originalCVars = nil
     end
 
-    if MinimapCluster then MinimapCluster:Show() end
-    for i = 1, 4 do
-        local frame = _G["PartyMemberFrame" .. i]
-        if frame then frame:Show() end
+    for _, name in ipairs(HIDDEN_FRAMES) do
+        reparentRestore(name)
     end
-    if CompactRaidFrameManager then CompactRaidFrameManager:Show() end
-    if CompactRaidFrameContainer then CompactRaidFrameContainer:Show() end
-    if TargetFrame then TargetFrame:EnableMouse(true) end
-    if HS.Game.targetCover then HS.Game.targetCover:Hide() end
-    if HS.Game.totCover then HS.Game.totCover:Hide() end
 
     if HS.Game.bindFrame then
         ClearOverrideBindings(HS.Game.bindFrame)
@@ -536,16 +563,9 @@ function HS.Game.RestoreUI()
 end
 
 function HS.Game.HideRevealingFrames()
-    if MinimapCluster then MinimapCluster:Hide() end
-    for i = 1, 4 do
-        local frame = _G["PartyMemberFrame" .. i]
-        if frame then frame:Hide() end
+    for _, name in ipairs(HIDDEN_FRAMES) do
+        reparentHide(name)
     end
-    if CompactRaidFrameManager then CompactRaidFrameManager:Hide() end
-    if CompactRaidFrameContainer then CompactRaidFrameContainer:Hide() end
-    if TargetFrame then TargetFrame:EnableMouse(false) end
-    if HS.Game.targetCover then HS.Game.targetCover:Show() end
-    if HS.Game.totCover then HS.Game.totCover:Show() end
 end
 
 -- ============================================================================
