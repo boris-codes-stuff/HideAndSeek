@@ -247,6 +247,7 @@ function HS.Game.OnReadyCheckFinished()
 end
 
 function HS.Game.StartCountdown()
+    ClearRaidIcons()
     state.round = state.round + 1
     if state.nextSeeker and state.players[state.nextSeeker] then
         state.seeker = state.nextSeeker
