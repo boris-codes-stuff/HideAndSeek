@@ -383,19 +383,19 @@ local function CreateHUD()
         f.rows[i] = r
     end
 
-    f.roleText = Text(f, "", 10, C.grey, "BOTTOM", f, "BOTTOM", 0, 10)
+    f.cooldownText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    f.cooldownText:SetPoint("BOTTOM", f, "BOTTOM", 0, 6)
+    f.cooldownText:SetTextColor(0.8, 0.2, 0.2, 1)
+    f.cooldownText:SetText("")
+
+    f.roleText = Text(f, "", 10, C.grey, "BOTTOM", f, "BOTTOM", 0, 20)
 
     f.guessText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     f.guessText:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
     f.guessText:SetPoint("BOTTOM", f.roleText, "TOP", 0, 4)
     f.guessText:SetTextColor(1, 0.82, 0, 1)
     f.guessText:SetText("")
-
-    f.cooldownText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    f.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-    f.cooldownText:SetPoint("TOP", f.roleText, "BOTTOM", 0, -2)
-    f.cooldownText:SetTextColor(0.8, 0.2, 0.2, 1)
-    f.cooldownText:SetText("")
 
     f:Hide()
     return f

@@ -28,6 +28,10 @@ HS.Game.state = {
 
 local state = HS.Game.state
 
+local function ForceClearTarget()
+    if ClearTarget then pcall(ClearTarget) end
+end
+
 -- ============================================================================
 -- STATE MANAGEMENT
 -- ============================================================================
@@ -580,7 +584,7 @@ function HS.Game.ApplyGameUI()
     local me = UnitName("player")
     if state.seeker == me then
         -- Clear target so seeker starts fresh
-        ClearTarget()
+        ForceClearTarget()
 
         -- Hide entire UI (Alt+Z equivalent) -- seeker only
         if not HS.Game._savedUIAlpha then
@@ -711,7 +715,7 @@ function HS.Game.StartSeeking()
     end
 
     if playerName == state.seeker then
-        ClearTarget()
+        ForceClearTarget()
     end
 
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
