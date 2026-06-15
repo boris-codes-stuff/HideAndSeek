@@ -385,6 +385,18 @@ local function CreateHUD()
 
     f.roleText = Text(f, "", 10, C.grey, "BOTTOM", f, "BOTTOM", 0, 10)
 
+    f.guessText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.guessText:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE")
+    f.guessText:SetPoint("BOTTOM", f.roleText, "TOP", 0, 4)
+    f.guessText:SetTextColor(1, 0.82, 0, 1)
+    f.guessText:SetText("")
+
+    f.cooldownText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    f.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    f.cooldownText:SetPoint("TOP", f.roleText, "BOTTOM", 0, -2)
+    f.cooldownText:SetTextColor(0.8, 0.2, 0.2, 1)
+    f.cooldownText:SetText("")
+
     f:Hide()
     return f
 end
@@ -808,15 +820,24 @@ function HS.UI.UpdateHUD()
     end
 
     if state.seeker == me then
+        f.roleText:SetText("/point or click to tag!")
         if state.maxTagAttempts > 0 then
             local attemptsLeft = state.maxTagAttempts - state.tagAttempts
             if attemptsLeft > 0 then
-                f.roleText:SetText("/point or click to tag! " .. attemptsLeft .. " guesses left")
+                f.guessText:SetText(attemptsLeft .. " guesses left")
+                f.guessText:SetTextColor(1, 0.82, 0, 1)
             else
-                f.roleText:SetText("|cFFFF0000No guesses left! Wait for timer.|r")
+                f.guessText:SetText("NO GUESSES LEFT")
+                f.guessText:SetTextColor(0.8, 0.2, 0.2, 1)
             end
         else
-            f.roleText:SetText("/point or click to tag!")
+            f.guessText:SetText("")
+        end
+        local cd = HS.DEFAULTS.tagCooldown - (GetTime() - state.lastTagTime)
+        if cd > 0 then
+            f.cooldownText:SetText("Cooldown: " .. math.ceil(cd) .. "s")
+        else
+            f.cooldownText:SetText("|cFF33CC33Ready to guess|r")
         end
     elseif state.players[me] then
         if state.players[me].role == HS.ROLE.HIDER then
@@ -828,6 +849,8 @@ function HS.UI.UpdateHUD()
         elseif state.players[me].role == HS.ROLE.FOUND then
             f.roleText:SetText("You were found!")
         end
+        f.guessText:SetText("")
+        f.cooldownText:SetText("")
     end
 end
 

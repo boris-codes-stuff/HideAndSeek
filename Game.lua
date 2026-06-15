@@ -635,20 +635,36 @@ end
 -- ============================================================================
 
 function HS.Game.TriggerSound(targetName, soundType)
-    if state.phase ~= HS.PHASE.SEEKING then return end
-    if state.seeker ~= UnitName("player") then return end
-    if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then return end
+    if state.phase ~= HS.PHASE.SEEKING then
+        HS.Util.Warn("Ping failed: not in seeking phase")
+        return
+    end
+    if state.seeker ~= UnitName("player") then
+        HS.Util.Warn("Ping failed: you are not the seeker")
+        return
+    end
+    if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then
+        HS.Util.Warn("Ping failed: " .. targetName .. " is not a hider")
+        return
+    end
 
     if soundType == "YELL" then
         local charges = state.yellCharges[targetName] or 0
-        if charges <= 0 then return end
+        if charges <= 0 then
+            HS.Util.Warn("Ping failed: no yell charges for " .. targetName)
+            return
+        end
         state.yellCharges[targetName] = charges - 1
     else
         local charges = state.soundCharges[targetName] or 0
-        if charges <= 0 then return end
+        if charges <= 0 then
+            HS.Util.Warn("Ping failed: no emote charges for " .. targetName)
+            return
+        end
         state.soundCharges[targetName] = charges - 1
     end
 
+    HS.Util.Print("Ping sent to " .. targetName .. " (" .. soundType .. ")")
     HS.Comm.Send(HS.Comm.MSG.TRIGGER_SOUND, targetName .. "|" .. soundType)
     if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
 end
@@ -717,7 +733,7 @@ function HS.Game.TryTag()
     local now = GetTime()
     if now - state.lastTagTime < HS.DEFAULTS.tagCooldown then
         local remaining = math.ceil(HS.DEFAULTS.tagCooldown - (now - state.lastTagTime))
-        HS.Util.Warn("Tag on cooldown: " .. remaining .. "s remaining.")
+        RaidNotice_AddMessage(RaidWarningFrame, "Cooldown: " .. remaining .. "s", ChatTypeInfo["RAID_WARNING"])
         return
     end
 
@@ -737,7 +753,7 @@ function HS.Game.TryTag()
         state.tagAttempts = state.tagAttempts + 1
         local attemptsLeft = state.maxTagAttempts - state.tagAttempts
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
-        HS.Util.Warn("That's an NPC! (" .. attemptsLeft .. " guesses left)")
+        RaidNotice_AddMessage(RaidWarningFrame, "NPC! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
@@ -754,7 +770,7 @@ function HS.Game.TryTag()
 
     if not state.players[targetName] then
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
-        HS.Util.Warn(targetName .. " is not in this game. (" .. attemptsLeft .. " guesses left)")
+        RaidNotice_AddMessage(RaidWarningFrame, "Not in game! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
@@ -1318,6 +1334,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_HIDE] = function(sender, data)
     state.hideTime = tonumber(parts[2])
     if parts[3] then state.allowMovement = parts[3] == "1" end
     state.phase = HS.PHASE.HIDING
+    HS.Util.Print("[DEBUG] seeker='" .. tostring(state.seeker) .. "' me='" .. UnitName("player") .. "' match=" .. tostring(state.seeker == UnitName("player")))
     state.round = state.round + 1
     state.timer = state.hideTime
     state.timerStart = GetTime()
@@ -1547,10 +1564,13 @@ HS.Comm.handlers[HS.Comm.MSG.TRIGGER_SOUND] = function(sender, data)
     if targetName ~= UnitName("player") then return end
     if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then return end
 
+    HS.Util.Print("Ping received! Doing " .. soundType)
     if soundType == "YELL" then
         SendChatMessage("I'M HERE!", "YELL")
     else
         local emotes = {"WHISTLE", "CHICKEN", "COUGH", "TRAIN"}
-        DoEmote(emotes[math.random(#emotes)])
+        local chosen = emotes[math.random(#emotes)]
+        HS.Util.Print("Emoting: " .. chosen)
+        DoEmote(chosen)
     end
 end
