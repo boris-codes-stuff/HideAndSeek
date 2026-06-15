@@ -579,6 +579,9 @@ function HS.Game.ApplyGameUI()
 
     local me = UnitName("player")
     if state.seeker == me then
+        -- Clear target so seeker starts fresh
+        ClearTarget()
+
         -- Hide entire UI (Alt+Z equivalent) -- seeker only
         if not HS.Game._savedUIAlpha then
             HS.Game._savedUIAlpha = UIParent:GetAlpha()
@@ -707,6 +710,10 @@ function HS.Game.StartSeeking()
         HS.Comm.Send(HS.Comm.MSG.START_SEEK, tostring(state.seekTime))
     end
 
+    if playerName == state.seeker then
+        ClearTarget()
+    end
+
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
 
     if playerName == state.seeker and HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
@@ -831,6 +838,15 @@ end
 
 function HS.Game.EndRound(allFound)
     state.phase = HS.PHASE.ROUND_END
+
+    -- Clear all raid icons from group members
+    for i = 1, GetNumGroupMembers() do
+        local unit = IsInRaid() and ("raid" .. i) or ("party" .. i)
+        if UnitExists(unit) then
+            SetRaidTarget(unit, 0)
+        end
+    end
+    SetRaidTarget("player", 0)
 
     -- Bonus for unfound hiders
     if not allFound then
