@@ -727,6 +727,9 @@ function HS.Game.StartSeeking()
     end
 
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
+    if playerName == state.seeker then
+        HS.Util.Print("You have " .. state.maxTagAttempts .. " guesses. The Old Gods grant you 1 extra.")
+    end
 
     if playerName == state.seeker and HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
         PlaySoundFile(HS.SOUNDS.seekStartFiles[math.random(#HS.SOUNDS.seekStartFiles)], "Master")
@@ -1437,6 +1440,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
 
     if playerName == state.seeker then
         HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Use /point or click to tag them.")
+        HS.Util.Print("You have " .. state.maxTagAttempts .. " guesses. The Old Gods grant you 1 extra.")
         if HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
             PlaySoundFile(HS.SOUNDS.seekStartFiles[math.random(#HS.SOUNDS.seekStartFiles)], "Master")
         end
