@@ -753,12 +753,17 @@ function HS.Game.TryTag()
         return
     end
 
-    state.lastTagTime = now
-
     if not UnitExists("target") then
         HS.Util.Warn("No target! Select a player first.")
         return
     end
+
+    if not HS.Util.IsInTagRange("target") then
+        RaidNotice_AddMessage(RaidWarningFrame, "Too far away!", ChatTypeInfo["RAID_WARNING"])
+        return
+    end
+
+    state.lastTagTime = now
 
     if not UnitIsPlayer("target") and not state.testMode then
         state.tagAttempts = state.tagAttempts + 1
@@ -766,11 +771,6 @@ function HS.Game.TryTag()
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
         RaidNotice_AddMessage(RaidWarningFrame, "NPC! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
-        return
-    end
-
-    if not HS.Util.IsInTagRange("target") then
-        RaidNotice_AddMessage(RaidWarningFrame, "Too far away!", ChatTypeInfo["RAID_WARNING"])
         return
     end
 
