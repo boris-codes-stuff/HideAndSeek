@@ -577,14 +577,21 @@ function HS.Game.ApplyGameUI()
         SetOverrideBindingClick(HS.Game.bindFrame, true, "F" .. i, "HAS_DummyBtn")
     end
 
-    -- Hide entire UI (Alt+Z equivalent) -- seeker only
     local me = UnitName("player")
     if state.seeker == me then
+        -- Hide entire UI (Alt+Z equivalent) -- seeker only
         if not HS.Game._savedUIAlpha then
             HS.Game._savedUIAlpha = UIParent:GetAlpha()
         end
         UIParent:SetAlpha(0)
         SetOverrideBindingClick(HS.Game.bindFrame, true, "ALT-Z", "HAS_DummyBtn")
+
+        -- Block map so seeker can't see party member positions
+        SetOverrideBindingClick(HS.Game.bindFrame, true, "M", "HAS_DummyBtn")
+        SetOverrideBindingClick(HS.Game.bindFrame, true, "SHIFT-M", "HAS_DummyBtn")
+        if WorldMapFrame and WorldMapFrame:IsShown() then
+            WorldMapFrame:Hide()
+        end
     end
 
     if RaidWarningFrame then
@@ -1021,14 +1028,19 @@ end
 -- ============================================================================
 
 function HS.Game.OnUpdate()
-    -- Enforce UI hidden for seeker (re-apply every tick so it can't be bypassed)
+    -- Enforce UI hidden + map closed for seeker every tick
     if state.phase == HS.PHASE.HIDING or state.phase == HS.PHASE.SEEKING then
         local me = UnitName("player")
-        if state.seeker == me and UIParent:GetAlpha() > 0 then
-            UIParent:SetAlpha(0)
-            if not HS.Game._lastUITamperReport or (GetTime() - HS.Game._lastUITamperReport) > 5 then
-                HS.Game._lastUITamperReport = GetTime()
-                HS.Comm.Send(HS.Comm.MSG.CHEAT, me .. "|ui_tamper")
+        if state.seeker == me then
+            if WorldMapFrame and WorldMapFrame:IsShown() then
+                WorldMapFrame:Hide()
+            end
+            if UIParent:GetAlpha() > 0 then
+                UIParent:SetAlpha(0)
+                if not HS.Game._lastUITamperReport or (GetTime() - HS.Game._lastUITamperReport) > 5 then
+                    HS.Game._lastUITamperReport = GetTime()
+                    HS.Comm.Send(HS.Comm.MSG.CHEAT, me .. "|ui_tamper")
+                end
             end
         end
     end
