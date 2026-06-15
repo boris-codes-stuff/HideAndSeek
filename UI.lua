@@ -301,6 +301,17 @@ local function CreateHUD()
         r.name = Text(f, "", 11, C.white, "TOPLEFT", f, "TOPLEFT", 28, y)
         r.score = Text(f, "", 11, C.yellow, "TOPLEFT", f, "TOPLEFT", 180, y)
         r.status = Text(f, "", 10, C.grey, "TOPLEFT", f, "TOPLEFT", 228, y)
+
+        r.triggerBtn = Btn(f, "Ping", 38, 18, nil)
+        r.triggerBtn:SetPoint("TOPLEFT", f, "TOPLEFT", 220, y + 2)
+        r.triggerBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
+        r.triggerBtn:Hide()
+
+        r.yellBtn = Btn(f, "Yell", 38, 18, nil)
+        r.yellBtn:SetPoint("LEFT", r.triggerBtn, "RIGHT", 2, 0)
+        r.yellBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
+        r.yellBtn:Hide()
+
         f.rows[i] = r
     end
 
@@ -690,9 +701,41 @@ function HS.UI.UpdateHUD()
                 r.bg:Hide()
             end
 
-            r.icon:Show(); r.name:Show(); r.score:Show(); r.status:Show()
+            local showTrigger = state.seeker == me and state.phase == HS.PHASE.SEEKING
+                and p.player.role == HS.ROLE.HIDER
+            if showTrigger then
+                local emoteCharges = state.soundCharges[p.name] or 0
+                local yellCharges = state.yellCharges[p.name] or 0
+                if emoteCharges > 0 then
+                    r.triggerBtn:SetText("Ping x" .. emoteCharges)
+                    r.triggerBtn:SetScript("OnClick", function()
+                        HS.Game.TriggerSound(p.name, "EMOTE")
+                    end)
+                    r.triggerBtn:Show()
+                else
+                    r.triggerBtn:Hide()
+                end
+                if yellCharges > 0 then
+                    r.yellBtn:SetText("Yell x" .. yellCharges)
+                    r.yellBtn:SetScript("OnClick", function()
+                        HS.Game.TriggerSound(p.name, "YELL")
+                    end)
+                    r.yellBtn:Show()
+                else
+                    r.yellBtn:Hide()
+                end
+                r.status:Hide()
+            else
+                r.triggerBtn:Hide()
+                r.yellBtn:Hide()
+                r.status:Show()
+            end
+
+            r.icon:Show(); r.name:Show(); r.score:Show()
         else
             r.icon:Hide(); r.name:Hide(); r.score:Hide(); r.status:Hide(); r.bg:Hide()
+            r.triggerBtn:Hide()
+            r.yellBtn:Hide()
         end
     end
 

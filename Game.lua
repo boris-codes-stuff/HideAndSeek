@@ -22,6 +22,8 @@ HS.Game.state = {
     readyHiders = {},
     allowMovement = false,
     nextSeeker = nil,
+    soundCharges = {},
+    yellCharges = {},
 }
 
 local state = HS.Game.state
@@ -50,6 +52,8 @@ function HS.Game.Reset()
     state.readyHiders = {}
     state.allowMovement = false
     state.nextSeeker = nil
+    state.soundCharges = {}
+    state.yellCharges = {}
     HS.Game.RestoreUI()
     HS.Boundaries.Clear()
 end
@@ -614,6 +618,29 @@ function HS.Game.HideRevealingFrames()
 end
 
 -- ============================================================================
+-- SOUND TRIGGERS (seeker can force hiders to emote/yell)
+-- ============================================================================
+
+function HS.Game.TriggerSound(targetName, soundType)
+    if state.phase ~= HS.PHASE.SEEKING then return end
+    if state.seeker ~= UnitName("player") then return end
+    if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then return end
+
+    if soundType == "YELL" then
+        local charges = state.yellCharges[targetName] or 0
+        if charges <= 0 then return end
+        state.yellCharges[targetName] = charges - 1
+    else
+        local charges = state.soundCharges[targetName] or 0
+        if charges <= 0 then return end
+        state.soundCharges[targetName] = charges - 1
+    end
+
+    HS.Comm.Send(HS.Comm.MSG.TRIGGER_SOUND, targetName .. "|" .. soundType)
+    if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+end
+
+-- ============================================================================
 -- PHASE TRANSITIONS
 -- ============================================================================
 
@@ -624,6 +651,18 @@ function HS.Game.StartSeeking()
     state.lastTagTime = 0
     state.tagAttempts = 0
     state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
+
+    state.soundCharges = {}
+    state.yellCharges = {}
+    HS.Game._bonusEmoteGiven = false
+    HS.Game._bonusYellGiven = false
+    HS.Game._autoYellDone = false
+    for name, player in pairs(state.players) do
+        if player.role == HS.ROLE.HIDER then
+            state.soundCharges[name] = 1
+            state.yellCharges[name] = 0
+        end
+    end
 
     local playerName = UnitName("player")
     if not state.allowMovement and state.players[playerName] and state.players[playerName].role == HS.ROLE.HIDER then
@@ -1026,6 +1065,47 @@ function HS.Game.OnUpdate()
         HS.UI.UpdateTimer(remaining, state.phase)
     end
 
+    if state.phase == HS.PHASE.SEEKING then
+        local me = UnitName("player")
+
+        -- +1 emote charge at 2:30 remaining
+        if not HS.Game._bonusEmoteGiven and remaining <= 150 then
+            HS.Game._bonusEmoteGiven = true
+            for name, player in pairs(state.players) do
+                if player.role == HS.ROLE.HIDER then
+                    state.soundCharges[name] = (state.soundCharges[name] or 0) + 1
+                end
+            end
+            if state.seeker == me then
+                RaidNotice_AddMessage(RaidWarningFrame, "+1 Ping charge!", ChatTypeInfo["RAID_WARNING"])
+            end
+            if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        end
+
+        -- +1 yell charge at 1:00 remaining
+        if not HS.Game._bonusYellGiven and remaining <= 60 then
+            HS.Game._bonusYellGiven = true
+            for name, player in pairs(state.players) do
+                if player.role == HS.ROLE.HIDER then
+                    state.yellCharges[name] = (state.yellCharges[name] or 0) + 1
+                end
+            end
+            if state.seeker == me then
+                RaidNotice_AddMessage(RaidWarningFrame, "Yell unlocked!", ChatTypeInfo["RAID_WARNING"])
+            end
+            if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        end
+
+        -- Auto-yell at 0:15 remaining for all alive hiders
+        if not HS.Game._autoYellDone and remaining <= 15 then
+            HS.Game._autoYellDone = true
+            local myPlayer = state.players[me]
+            if myPlayer and myPlayer.role == HS.ROLE.HIDER then
+                SendChatMessage("I'M HERE!", "YELL")
+            end
+        end
+    end
+
     -- Boundary check (every 1s)
     if not HS.Game._lastBoundaryCheck then HS.Game._lastBoundaryCheck = 0 end
     if GetTime() - HS.Game._lastBoundaryCheck >= HS.DEFAULTS.boundaryCheckInterval then
@@ -1268,6 +1348,18 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     state.tagAttempts = 0
     state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
 
+    state.soundCharges = {}
+    state.yellCharges = {}
+    HS.Game._bonusEmoteGiven = false
+    HS.Game._bonusYellGiven = false
+    HS.Game._autoYellDone = false
+    for name, player in pairs(state.players) do
+        if player.role == HS.ROLE.HIDER then
+            state.soundCharges[name] = 1
+            state.yellCharges[name] = 0
+        end
+    end
+
     local playerName = UnitName("player")
     if not state.allowMovement and state.players[playerName] and state.players[playerName].role == HS.ROLE.HIDER then
         local _, px, py = HS.Util.GetPlayerPosition()
@@ -1425,5 +1517,22 @@ HS.Comm.handlers[HS.Comm.MSG.HB] = function(sender, data)
         if cvarHash ~= HS.Util.EXPECTED_CVAR_HASH then
             HS.Comm.Send(HS.Comm.MSG.CHEAT, name .. "|nameplates_enabled")
         end
+    end
+end
+
+HS.Comm.handlers[HS.Comm.MSG.TRIGGER_SOUND] = function(sender, data)
+    local parts = HS.Util.Split(data, "|")
+    if #parts < 2 then return end
+    local targetName = parts[1]
+    local soundType = parts[2]
+
+    if targetName ~= UnitName("player") then return end
+    if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then return end
+
+    if soundType == "YELL" then
+        SendChatMessage("I'M HERE!", "YELL")
+    else
+        local emotes = {"WHISTLE", "CHICKEN", "COUGH", "TRAIN"}
+        DoEmote(emotes[math.random(#emotes)])
     end
 end

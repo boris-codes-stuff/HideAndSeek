@@ -22,6 +22,7 @@ HS.Comm.MSG = {
     FREEZE_POS = "FP",
     COUNTDOWN  = "CD",
     READY      = "RDY",
+    TRIGGER_SOUND = "TS",
 }
 
 function HS.Comm.Init()
