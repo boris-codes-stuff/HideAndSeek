@@ -823,9 +823,12 @@ function HS.UI.UpdateHUD()
         f.roleText:SetText("/point or click to tag!")
         if state.maxTagAttempts > 0 then
             local attemptsLeft = state.maxTagAttempts - state.tagAttempts
-            if attemptsLeft > 0 then
-                f.guessText:SetText(attemptsLeft .. " guesses left")
+            if attemptsLeft > 1 then
+                f.guessText:SetText((attemptsLeft - 1) .. " guesses left")
                 f.guessText:SetTextColor(1, 0.82, 0, 1)
+            elseif attemptsLeft == 1 then
+                f.guessText:SetText("LAST GUESS (Old Gods)")
+                f.guessText:SetTextColor(0.6, 0.1, 0.6, 1)
             else
                 f.guessText:SetText("NO GUESSES LEFT")
                 f.guessText:SetTextColor(0.8, 0.2, 0.2, 1)

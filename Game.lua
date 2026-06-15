@@ -728,7 +728,7 @@ function HS.Game.StartSeeking()
 
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
     if playerName == state.seeker then
-        HS.Util.Print("You have " .. state.maxTagAttempts .. " guesses. The Old Gods grant you 1 extra.")
+        HS.Util.Print("You have " .. (state.maxTagAttempts - 1) .. " guesses.")
     end
 
     if playerName == state.seeker and HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
@@ -775,12 +775,15 @@ function HS.Game.TryTag()
         state.tagAttempts = state.tagAttempts + 1
         local attemptsLeft = state.maxTagAttempts - state.tagAttempts
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
-        RaidNotice_AddMessage(RaidWarningFrame, "NPC! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
-        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         if attemptsLeft <= 0 then
             RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
             HS.Game.EndRound(false)
+        elseif attemptsLeft == 1 then
+            RaidNotice_AddMessage(RaidWarningFrame, "THE OLD GODS HAVE GRANTED YOU YOUR LAST GUESS", ChatTypeInfo["RAID_WARNING"])
+        else
+            RaidNotice_AddMessage(RaidWarningFrame, "NPC! " .. (attemptsLeft - 1) .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         end
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
 
@@ -791,12 +794,15 @@ function HS.Game.TryTag()
 
     if not state.players[targetName] then
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
-        RaidNotice_AddMessage(RaidWarningFrame, "Not in game! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
-        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         if attemptsLeft <= 0 then
             RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
             HS.Game.EndRound(false)
+        elseif attemptsLeft == 1 then
+            RaidNotice_AddMessage(RaidWarningFrame, "THE OLD GODS HAVE GRANTED YOU YOUR LAST GUESS", ChatTypeInfo["RAID_WARNING"])
+        else
+            RaidNotice_AddMessage(RaidWarningFrame, "Not in game! " .. (attemptsLeft - 1) .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         end
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
 
@@ -808,12 +814,15 @@ function HS.Game.TryTag()
 
     if state.players[targetName].role ~= HS.ROLE.HIDER then
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
-        RaidNotice_AddMessage(RaidWarningFrame, "Wrong! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
-        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         if attemptsLeft <= 0 then
             RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
             HS.Game.EndRound(false)
+        elseif attemptsLeft == 1 then
+            RaidNotice_AddMessage(RaidWarningFrame, "THE OLD GODS HAVE GRANTED YOU YOUR LAST GUESS", ChatTypeInfo["RAID_WARNING"])
+        else
+            RaidNotice_AddMessage(RaidWarningFrame, "Wrong! " .. (attemptsLeft - 1) .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         end
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
     end
 
@@ -1440,7 +1449,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
 
     if playerName == state.seeker then
         HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Use /point or click to tag them.")
-        HS.Util.Print("You have " .. state.maxTagAttempts .. " guesses. The Old Gods grant you 1 extra.")
+        HS.Util.Print("You have " .. (state.maxTagAttempts - 1) .. " guesses.")
         if HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
             PlaySoundFile(HS.SOUNDS.seekStartFiles[math.random(#HS.SOUNDS.seekStartFiles)], "Master")
         end
