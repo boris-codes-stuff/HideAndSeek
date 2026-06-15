@@ -32,6 +32,16 @@ local function ForceClearTarget()
     if ClearTarget then pcall(ClearTarget) end
 end
 
+local function ClearRaidIcons()
+    for i = 1, GetNumGroupMembers() do
+        local unit = IsInRaid() and ("raid" .. i) or ("party" .. i)
+        if UnitExists(unit) then
+            SetRaidTarget(unit, 0)
+        end
+    end
+    SetRaidTarget("player", 0)
+end
+
 -- ============================================================================
 -- STATE MANAGEMENT
 -- ============================================================================
@@ -58,6 +68,8 @@ function HS.Game.Reset()
     state.nextSeeker = nil
     state.soundCharges = {}
     state.yellCharges = {}
+    ClearRaidIcons()
+    ForceClearTarget()
     HS.Game.RestoreUI()
     HS.Boundaries.Clear()
 end
@@ -843,14 +855,8 @@ end
 function HS.Game.EndRound(allFound)
     state.phase = HS.PHASE.ROUND_END
 
-    -- Clear all raid icons from group members
-    for i = 1, GetNumGroupMembers() do
-        local unit = IsInRaid() and ("raid" .. i) or ("party" .. i)
-        if UnitExists(unit) then
-            SetRaidTarget(unit, 0)
-        end
-    end
-    SetRaidTarget("player", 0)
+    ClearRaidIcons()
+    ForceClearTarget()
 
     -- Bonus for unfound hiders
     if not allFound then
@@ -917,6 +923,8 @@ end
 
 function HS.Game.EndGame()
     state.phase = HS.PHASE.GAME_END
+    ClearRaidIcons()
+    ForceClearTarget()
 
     local playerName = UnitName("player")
     if state.host == playerName then
