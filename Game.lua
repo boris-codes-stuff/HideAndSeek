@@ -28,18 +28,14 @@ HS.Game.state = {
 
 local state = HS.Game.state
 
-local function ForceClearTarget()
-    if ClearTarget then pcall(ClearTarget) end
-end
-
 local function ClearRaidIcons()
     for i = 1, GetNumGroupMembers() do
         local unit = IsInRaid() and ("raid" .. i) or ("party" .. i)
         if UnitExists(unit) then
-            SetRaidTarget(unit, 0)
+            pcall(SetRaidTarget, unit, 0)
         end
     end
-    SetRaidTarget("player", 0)
+    pcall(SetRaidTarget, "player", 0)
 end
 
 -- ============================================================================
@@ -69,7 +65,7 @@ function HS.Game.Reset()
     state.soundCharges = {}
     state.yellCharges = {}
     ClearRaidIcons()
-    ForceClearTarget()
+
     HS.Game.RestoreUI()
     HS.Boundaries.Clear()
 end
@@ -596,7 +592,7 @@ function HS.Game.ApplyGameUI()
     local me = UnitName("player")
     if state.seeker == me then
         -- Clear target so seeker starts fresh
-        ForceClearTarget()
+    
 
         -- Hide entire UI (Alt+Z equivalent) -- seeker only
         if not HS.Game._savedUIAlpha then
@@ -727,7 +723,7 @@ function HS.Game.StartSeeking()
     end
 
     if playerName == state.seeker then
-        ForceClearTarget()
+    
     end
 
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
@@ -830,7 +826,7 @@ function HS.Game.ProcessFind(hiderName)
 
     -- Raid marker on found player
     local icon = HS.FOUND_ICONS[order] or 8
-    SetRaidTarget("target", icon)
+    pcall(SetRaidTarget, "target", icon)
 
     local isLastFind = state.foundCount >= state.totalHiders
 
@@ -856,7 +852,7 @@ function HS.Game.EndRound(allFound)
     state.phase = HS.PHASE.ROUND_END
 
     ClearRaidIcons()
-    ForceClearTarget()
+
 
     -- Bonus for unfound hiders
     if not allFound then
@@ -924,7 +920,7 @@ end
 function HS.Game.EndGame()
     state.phase = HS.PHASE.GAME_END
     ClearRaidIcons()
-    ForceClearTarget()
+
 
     local playerName = UnitName("player")
     if state.host == playerName then
