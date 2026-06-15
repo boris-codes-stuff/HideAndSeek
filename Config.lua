@@ -62,8 +62,15 @@ HS.SOUNDS = {
         "Interface\\AddOns\\HideAndSeek\\hellomf.mp3",
         "Interface\\AddOns\\HideAndSeek\\johnny.mp3",
     },
-    buzzerFile = "Interface\\AddOns\\HideAndSeek\\buzzer.wav",
-    seekStartFile = "Interface\\AddOns\\HideAndSeek\\herewego.mp3",
+    buzzerFiles = {
+        "Interface\\AddOns\\HideAndSeek\\buzzer.wav",
+        "Interface\\AddOns\\HideAndSeek\\bruhnah.mp3",
+    },
+    seekStartFiles = {
+        "Interface\\AddOns\\HideAndSeek\\herewego.mp3",
+        "Interface\\AddOns\\HideAndSeek\\imawake.mp3",
+        "Interface\\AddOns\\HideAndSeek\\moveout.mp3",
+    },
     loseFile = "Interface\\AddOns\\HideAndSeek\\trombone.mp3",
     winFiles = {
         "Interface\\AddOns\\HideAndSeek\\success.mp3",

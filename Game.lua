@@ -62,7 +62,7 @@ end
 -- GAME CREATION & JOINING
 -- ============================================================================
 
-function HS.Game.Create(presetName, hideTime, seekTime, allowMovement)
+function HS.Game.Create(presetName, hideTime, seekTime, allowMovement, selectedSubZones)
     if state.phase ~= HS.PHASE.IDLE then
         HS.Util.Warn("A game is already in progress.")
         return
@@ -92,6 +92,9 @@ function HS.Game.Create(presetName, hideTime, seekTime, allowMovement)
         local preset = HS.Presets.Get(presetName)
         if preset then
             HS.Boundaries.SetFromPreset(preset)
+            if selectedSubZones then
+                HS.Boundaries.validSubZones = selectedSubZones
+            end
             state.hideTime = preset.hideTime
             state.seekTime = preset.seekTime
         end
@@ -574,12 +577,15 @@ function HS.Game.ApplyGameUI()
         SetOverrideBindingClick(HS.Game.bindFrame, true, "F" .. i, "HAS_DummyBtn")
     end
 
-    -- Hide entire UI (Alt+Z equivalent)
-    if not HS.Game._savedUIAlpha then
-        HS.Game._savedUIAlpha = UIParent:GetAlpha()
+    -- Hide entire UI (Alt+Z equivalent) -- seeker only
+    local me = UnitName("player")
+    if state.seeker == me then
+        if not HS.Game._savedUIAlpha then
+            HS.Game._savedUIAlpha = UIParent:GetAlpha()
+        end
+        UIParent:SetAlpha(0)
+        SetOverrideBindingClick(HS.Game.bindFrame, true, "ALT-Z", "HAS_DummyBtn")
     end
-    UIParent:SetAlpha(0)
-    SetOverrideBindingClick(HS.Game.bindFrame, true, "ALT-Z", "HAS_DummyBtn")
 
     if RaidWarningFrame then
         RaidWarningFrame:SetIgnoreParentAlpha(true)
@@ -681,7 +687,7 @@ function HS.Game.StartSeeking()
     HS.Util.Print("Seeking phase! " .. state.seeker .. " is now searching!")
 
     if playerName == state.seeker and HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
-        PlaySoundFile(HS.SOUNDS.seekStartFile, "Master")
+        PlaySoundFile(HS.SOUNDS.seekStartFiles[math.random(#HS.SOUNDS.seekStartFiles)], "Master")
     end
 
     if HS.UI then
@@ -723,7 +729,7 @@ function HS.Game.TryTag()
     if not UnitIsPlayer("target") and not state.testMode then
         state.tagAttempts = state.tagAttempts + 1
         local attemptsLeft = state.maxTagAttempts - state.tagAttempts
-        PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
+        PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
         HS.Util.Warn("That's an NPC! (" .. attemptsLeft .. " guesses left)")
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
@@ -740,7 +746,7 @@ function HS.Game.TryTag()
     local targetName = UnitName("target")
 
     if not state.players[targetName] then
-        PlaySoundFile(HS.SOUNDS.buzzerFile, "Master")
+        PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
         HS.Util.Warn(targetName .. " is not in this game. (" .. attemptsLeft .. " guesses left)")
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         return
@@ -1370,7 +1376,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     if playerName == state.seeker then
         HS.Util.Print("GO! Find all " .. state.totalHiders .. " hiders! Use /point or click to tag them.")
         if HideAndSeekDB and HideAndSeekDB.settings.soundEnabled then
-            PlaySoundFile(HS.SOUNDS.seekStartFile, "Master")
+            PlaySoundFile(HS.SOUNDS.seekStartFiles[math.random(#HS.SOUNDS.seekStartFiles)], "Master")
         end
     else
         if state.allowMovement then

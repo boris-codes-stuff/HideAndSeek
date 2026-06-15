@@ -44,7 +44,7 @@ end
 
 local function CreateLobby()
     local f = CreateFrame("Frame", "HAS_Lobby", UIParent, "BackdropTemplate")
-    f:SetSize(400, 560)
+    f:SetSize(400, 600)
     f:SetPoint("CENTER")
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -75,7 +75,7 @@ local function CreateLobby()
     local grid = CreateFrame("Frame", nil, f)
     grid:SetPoint("TOPLEFT", mapLabel, "BOTTOMLEFT", 0, -4)
     grid:SetPoint("RIGHT", f, "RIGHT", -12, 0)
-    grid:SetHeight(160)
+    grid:SetHeight(200)
 
     f.presetButtons = {}
     local btnW, btnH, gap = 80, 22, 3
@@ -129,8 +129,16 @@ local function CreateLobby()
     f.seekTimeLabel = Text(infoFrame, "", 10, C.grey, "TOPLEFT", f.hideTimeLabel, "BOTTOMLEFT", 0, -2)
     f.recPlayersLabel = Text(infoFrame, "", 10, C.gold, "TOPRIGHT", infoFrame, "TOPRIGHT", -8, -8)
 
+    -- Subzone selector
+    local szFrame = CreateFrame("Frame", nil, f, "BackdropTemplate")
+    szFrame:SetPoint("TOPLEFT", infoFrame, "BOTTOMLEFT", 0, -4)
+    szFrame:SetPoint("RIGHT", f, "RIGHT", -12, 0)
+    szFrame:SetHeight(0)
+    f.subZoneFrame = szFrame
+    f.subZoneChecks = {}
+
     -- Player list
-    local plLabel = Text(f, "Players:", 12, C.gold, "TOPLEFT", infoFrame, "BOTTOMLEFT", 0, -10)
+    local plLabel = Text(f, "Players:", 12, C.gold, "TOPLEFT", szFrame, "BOTTOMLEFT", 0, -6)
 
     local plFrame = CreateFrame("Frame", nil, f, "BackdropTemplate")
     plFrame:SetHeight(120)
@@ -189,7 +197,8 @@ local function CreateLobby()
         local preset = HS.UI.selectedPreset
         local allowMove = moveCheck:GetChecked()
         if preset then
-            HS.Game.Create(preset.name, preset.hideTime, preset.seekTime, allowMove)
+            local selectedSZ = HS.UI.GetSelectedSubZones()
+            HS.Game.Create(preset.name, preset.hideTime, preset.seekTime, allowMove, selectedSZ)
         else
             HS.Game.Create("Custom", HS.DEFAULTS.hideTime, HS.DEFAULTS.seekTime, allowMove)
         end
@@ -233,6 +242,65 @@ function HS.UI.SelectPreset(preset)
     f.hideTimeLabel:SetText("Hide: " .. preset.hideTime .. "s  |  Seek: " .. HS.Util.FormatTime(preset.seekTime))
     f.seekTimeLabel:SetText(preset.description)
     f.recPlayersLabel:SetText(preset.recPlayers .. " players (min " .. preset.minPlayers .. ")")
+
+    -- Populate subzone checkboxes
+    for _, cb in ipairs(f.subZoneChecks) do
+        cb:Hide()
+        if cb.label then cb.label:SetText("") end
+    end
+
+    local szHeight = 0
+    if preset.validSubZones and #preset.validSubZones > 0 and preset.useSubZone then
+        if not f.subZoneTitle then
+            f.subZoneTitle = Text(f.subZoneFrame, "Play area:", 10, C.gold,
+                "TOPLEFT", f.subZoneFrame, "TOPLEFT", 8, -6)
+        end
+        f.subZoneTitle:Show()
+        Backdrop(f.subZoneFrame, {0.12, 0.12, 0.12, 1})
+
+        for i, szName in ipairs(preset.validSubZones) do
+            if not f.subZoneChecks[i] then
+                local cb = CreateFrame("CheckButton", "HAS_SZCb" .. i, f.subZoneFrame, "UICheckButtonTemplate")
+                cb:SetSize(20, 20)
+                local lbl = cb:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                lbl:SetFont("Fonts\\FRIZQT__.TTF", 9, "")
+                lbl:SetTextColor(1, 1, 1, 1)
+                lbl:SetPoint("LEFT", cb, "RIGHT", 0, 0)
+                cb.label = lbl
+                f.subZoneChecks[i] = cb
+            end
+            local cb = f.subZoneChecks[i]
+            cb:ClearAllPoints()
+            cb:SetPoint("TOPLEFT", f.subZoneFrame, "TOPLEFT", 6, -20 - ((i - 1) * 22))
+            cb:SetChecked(true)
+            cb.label:SetText(szName)
+            cb.subZoneName = szName
+            cb:Show()
+        end
+
+        szHeight = 24 + (#preset.validSubZones * 22)
+    else
+        f.subZoneFrame:SetBackdrop(nil)
+        if f.subZoneTitle then f.subZoneTitle:Hide() end
+    end
+
+    f.subZoneFrame:SetHeight(szHeight)
+    f:SetHeight(600 + szHeight)
+end
+
+function HS.UI.GetSelectedSubZones()
+    local f = HS.UI.lobby
+    if not f or not f.subZoneChecks then return nil end
+
+    local selected = {}
+    for _, cb in ipairs(f.subZoneChecks) do
+        if cb:IsShown() and cb:GetChecked() and cb.subZoneName then
+            table.insert(selected, cb.subZoneName)
+        end
+    end
+
+    if #selected == 0 then return nil end
+    return selected
 end
 
 -- ============================================================================
