@@ -694,7 +694,7 @@ function HS.Game.StartSeeking()
     state.timerStart = GetTime()
     state.lastTagTime = 0
     state.tagAttempts = 0
-    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
+    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider + 1
 
     state.soundCharges = {}
     state.yellCharges = {}
@@ -756,11 +756,6 @@ function HS.Game.TryTag()
         return
     end
 
-    if state.maxTagAttempts > 0 and state.tagAttempts >= state.maxTagAttempts then
-        HS.Util.Warn("No guesses left! Wait for the timer to end.")
-        return
-    end
-
     if not UnitExists("target") then
         HS.Util.Warn("No target! Select a player first.")
         return
@@ -779,6 +774,10 @@ function HS.Game.TryTag()
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
         RaidNotice_AddMessage(RaidWarningFrame, "NPC! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        if attemptsLeft <= 0 then
+            RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
+            HS.Game.EndRound(false)
+        end
         return
     end
 
@@ -791,6 +790,10 @@ function HS.Game.TryTag()
         PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
         RaidNotice_AddMessage(RaidWarningFrame, "Not in game! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        if attemptsLeft <= 0 then
+            RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
+            HS.Game.EndRound(false)
+        end
         return
     end
 
@@ -801,7 +804,13 @@ function HS.Game.TryTag()
     end
 
     if state.players[targetName].role ~= HS.ROLE.HIDER then
+        PlaySoundFile(HS.SOUNDS.buzzerFiles[math.random(#HS.SOUNDS.buzzerFiles)], "Master")
+        RaidNotice_AddMessage(RaidWarningFrame, "Wrong! " .. attemptsLeft .. " guesses left", ChatTypeInfo["RAID_WARNING"])
         if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        if attemptsLeft <= 0 then
+            RaidNotice_AddMessage(RaidWarningFrame, "Out of guesses!", ChatTypeInfo["RAID_WARNING"])
+            HS.Game.EndRound(false)
+        end
         return
     end
 
@@ -1405,7 +1414,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     state.timerStart = GetTime()
     state.lastTagTime = 0
     state.tagAttempts = 0
-    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider
+    state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider + 1
 
     state.soundCharges = {}
     state.yellCharges = {}
