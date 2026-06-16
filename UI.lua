@@ -375,10 +375,10 @@ local function CreateHUD()
         r.triggerBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
         r.triggerBtn:Hide()
 
-        r.yellBtn = Btn(f, "Yell", 38, 18, nil)
-        r.yellBtn:SetPoint("LEFT", r.triggerBtn, "RIGHT", 2, 0)
-        r.yellBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
-        r.yellBtn:Hide()
+        r.scanBtn = Btn(f, "Scan", 38, 18, nil)
+        r.scanBtn:SetPoint("LEFT", r.triggerBtn, "RIGHT", 2, 0)
+        r.scanBtn:GetFontString():SetFont("Fonts\\FRIZQT__.TTF", 9, "")
+        r.scanBtn:Hide()
 
         f.rows[i] = r
     end
@@ -785,7 +785,6 @@ function HS.UI.UpdateHUD()
                 and p.player.role == HS.ROLE.HIDER
             if showTrigger then
                 local emoteCharges = state.soundCharges[p.name] or 0
-                local yellCharges = state.yellCharges[p.name] or 0
                 if emoteCharges > 0 then
                     r.triggerBtn:SetText("Ping x" .. emoteCharges)
                     r.triggerBtn:SetScript("OnClick", function()
@@ -795,19 +794,26 @@ function HS.UI.UpdateHUD()
                 else
                     r.triggerBtn:Hide()
                 end
-                if yellCharges > 0 then
-                    r.yellBtn:SetText("Yell x" .. yellCharges)
-                    r.yellBtn:SetScript("OnClick", function()
-                        HS.Game.TriggerSound(p.name, "YELL")
+                if state.scanUnlocked then
+                    local scanCD = HS.DEFAULTS.scanCooldown - (GetTime() - (state.lastScanTime or 0))
+                    if scanCD > 0 then
+                        r.scanBtn:SetText(math.ceil(scanCD) .. "s")
+                        r.scanBtn:Disable()
+                    else
+                        r.scanBtn:SetText("Scan")
+                        r.scanBtn:Enable()
+                    end
+                    r.scanBtn:SetScript("OnClick", function()
+                        HS.Game.ScanPlayer(p.name)
                     end)
-                    r.yellBtn:Show()
+                    r.scanBtn:Show()
                 else
-                    r.yellBtn:Hide()
+                    r.scanBtn:Hide()
                 end
                 r.status:Hide()
             else
                 r.triggerBtn:Hide()
-                r.yellBtn:Hide()
+                r.scanBtn:Hide()
                 r.status:Show()
             end
 
@@ -815,7 +821,7 @@ function HS.UI.UpdateHUD()
         else
             r.icon:Hide(); r.name:Hide(); r.score:Hide(); r.status:Hide(); r.bg:Hide()
             r.triggerBtn:Hide()
-            r.yellBtn:Hide()
+            r.scanBtn:Hide()
         end
     end
 

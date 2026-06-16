@@ -35,6 +35,7 @@ HS.DEFAULTS = {
     preGameCountdown = 10,
     outOfBoundsGrace = 5,
     tagAttemptsPerHider = 3,
+    scanCooldown = 60,
 }
 
 HS.COLORS = {

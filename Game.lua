@@ -23,7 +23,8 @@ HS.Game.state = {
     allowMovement = false,
     nextSeeker = nil,
     soundCharges = {},
-    yellCharges = {},
+    scanUnlocked = false,
+    lastScanTime = 0,
 }
 
 local state = HS.Game.state
@@ -63,7 +64,8 @@ function HS.Game.Reset()
     state.allowMovement = false
     state.nextSeeker = nil
     state.soundCharges = {}
-    state.yellCharges = {}
+    state.scanUnlocked = false
+    state.lastScanTime = 0
     ClearRaidIcons()
 
     HS.Game.RestoreUI()
@@ -674,6 +676,56 @@ function HS.Game.TriggerSound(targetName, soundType)
 end
 
 -- ============================================================================
+-- PROXIMITY SCAN
+-- ============================================================================
+
+local function GetUnitForPlayer(targetName)
+    for i = 1, GetNumGroupMembers() do
+        local unit = IsInRaid() and ("raid" .. i) or ("party" .. i)
+        if UnitExists(unit) and UnitName(unit) == targetName then
+            return unit
+        end
+    end
+    return nil
+end
+
+function HS.Game.ScanPlayer(targetName)
+    if state.phase ~= HS.PHASE.SEEKING then return end
+    if state.seeker ~= UnitName("player") then return end
+    if not state.scanUnlocked then return end
+
+    local now = GetTime()
+    local cd = HS.DEFAULTS.scanCooldown - (now - (state.lastScanTime or 0))
+    if cd > 0 then
+        RaidNotice_AddMessage(RaidWarningFrame, "Scan cooldown: " .. math.ceil(cd) .. "s", ChatTypeInfo["RAID_WARNING"])
+        return
+    end
+
+    local unit = GetUnitForPlayer(targetName)
+    if not unit then
+        RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": NOT DETECTED", ChatTypeInfo["RAID_WARNING"])
+        state.lastScanTime = now
+        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+        return
+    end
+
+    local result
+    if CheckInteractDistance(unit, 2) then
+        result = "|cFFFF0000CLOSE|r"
+    elseif CheckInteractDistance(unit, 1) then
+        result = "|cFFFF8800NEARBY|r"
+    elseif UnitInRange(unit) then
+        result = "|cFFFFFF00FAR|r"
+    else
+        result = "|cFF888888NOT DETECTED|r"
+    end
+
+    RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": " .. result, ChatTypeInfo["RAID_WARNING"])
+    state.lastScanTime = now
+    if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
+end
+
+-- ============================================================================
 -- PHASE TRANSITIONS
 -- ============================================================================
 
@@ -686,14 +738,14 @@ function HS.Game.StartSeeking()
     state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider + 1
 
     state.soundCharges = {}
-    state.yellCharges = {}
+    state.scanUnlocked = false
+    state.lastScanTime = 0
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
     for name, player in pairs(state.players) do
         if player.role == HS.ROLE.HIDER then
             state.soundCharges[name] = 1
-            state.yellCharges[name] = 0
         end
     end
 
@@ -1150,16 +1202,17 @@ function HS.Game.OnUpdate()
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
 
-        -- +1 emote charge at 1:00 remaining
+        -- Unlock scan + extra emote at 1:00 remaining
         if not HS.Game._bonusYellGiven and remaining <= 60 then
             HS.Game._bonusYellGiven = true
+            state.scanUnlocked = true
             for name, player in pairs(state.players) do
                 if player.role == HS.ROLE.HIDER then
                     state.soundCharges[name] = (state.soundCharges[name] or 0) + 1
                 end
             end
             if state.seeker == me then
-                RaidNotice_AddMessage(RaidWarningFrame, "+1 Ping charge!", ChatTypeInfo["RAID_WARNING"])
+                RaidNotice_AddMessage(RaidWarningFrame, "Scan unlocked! +1 Ping!", ChatTypeInfo["RAID_WARNING"])
             end
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
@@ -1418,14 +1471,14 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     state.maxTagAttempts = state.totalHiders * HS.DEFAULTS.tagAttemptsPerHider + 1
 
     state.soundCharges = {}
-    state.yellCharges = {}
+    state.scanUnlocked = false
+    state.lastScanTime = 0
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
     for name, player in pairs(state.players) do
         if player.role == HS.ROLE.HIDER then
             state.soundCharges[name] = 1
-            state.yellCharges[name] = 0
         end
     end
 
