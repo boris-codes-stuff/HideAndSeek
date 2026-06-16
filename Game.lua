@@ -722,7 +722,11 @@ function HS.Game.ScanPlayer(targetName)
 
     state.scanCharges[targetName] = 0
     state.scanResults[targetName] = result
-    PlaySoundFile("Interface\\AddOns\\HideAndSeek\\scan.mp3", "Master")
+    local scanSounds = {
+        "Interface\\AddOns\\HideAndSeek\\scan.mp3",
+        "Interface\\AddOns\\HideAndSeek\\spideysense2.mp3",
+    }
+    PlaySoundFile(scanSounds[math.random(#scanSounds)], "Master")
     HS.Comm.Send(HS.Comm.MSG.SCAN_RESULT, targetName .. "|" .. result)
 
     local color = SCAN_COLORS[result] or "|cFFFFFFFF"
