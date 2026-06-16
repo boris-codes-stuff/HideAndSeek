@@ -781,9 +781,10 @@ function HS.UI.UpdateHUD()
                 r.bg:Hide()
             end
 
-            local showTrigger = state.seeker == me and state.phase == HS.PHASE.SEEKING
+            local scanResult = state.scanResults and state.scanResults[p.name]
+            local isSeeker = state.seeker == me and state.phase == HS.PHASE.SEEKING
                 and p.player.role == HS.ROLE.HIDER
-            if showTrigger then
+            if isSeeker then
                 local emoteCharges = state.soundCharges[p.name] or 0
                 if emoteCharges > 0 then
                     r.triggerBtn:SetText("Ping x" .. emoteCharges)
@@ -802,13 +803,27 @@ function HS.UI.UpdateHUD()
                         HS.Game.ScanPlayer(p.name)
                     end)
                     r.scanBtn:Show()
+                elseif scanResult then
+                    r.scanBtn:Hide()
+                    r.status:SetText(scanResult)
+                    if scanResult == "CLOSE" then r.status:SetTextColor(1, 0, 0, 1)
+                    elseif scanResult == "NEARBY" then r.status:SetTextColor(1, 0.53, 0, 1)
+                    elseif scanResult == "FAR" then r.status:SetTextColor(1, 1, 0.2, 1)
+                    else r.status:SetTextColor(0.5, 0.5, 0.5, 1) end
+                    r.status:Show()
                 else
                     r.scanBtn:Hide()
                 end
-                r.status:Hide()
             else
                 r.triggerBtn:Hide()
                 r.scanBtn:Hide()
+                if scanResult and p.player.role == HS.ROLE.HIDER then
+                    r.status:SetText(scanResult)
+                    if scanResult == "CLOSE" then r.status:SetTextColor(1, 0, 0, 1)
+                    elseif scanResult == "NEARBY" then r.status:SetTextColor(1, 0.53, 0, 1)
+                    elseif scanResult == "FAR" then r.status:SetTextColor(1, 1, 0.2, 1)
+                    else r.status:SetTextColor(0.5, 0.5, 0.5, 1) end
+                end
                 r.status:Show()
             end
 

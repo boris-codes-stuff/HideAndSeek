@@ -23,6 +23,7 @@ HS.Comm.MSG = {
     COUNTDOWN  = "CD",
     READY      = "RDY",
     TRIGGER_SOUND = "TS",
+    SCAN_RESULT   = "SR",
 }
 
 function HS.Comm.Init()

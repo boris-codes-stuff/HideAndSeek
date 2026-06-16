@@ -25,6 +25,7 @@ HS.Game.state = {
     soundCharges = {},
     scanUnlocked = false,
     scanCharges = {},
+    scanResults = {},
 }
 
 local state = HS.Game.state
@@ -66,6 +67,7 @@ function HS.Game.Reset()
     state.soundCharges = {}
     state.scanUnlocked = false
     state.scanCharges = {}
+    state.scanResults = {}
     ClearRaidIcons()
 
     HS.Game.RestoreUI()
@@ -689,6 +691,13 @@ local function GetUnitForPlayer(targetName)
     return nil
 end
 
+local SCAN_COLORS = {
+    CLOSE = "|cFFFF0000",
+    NEARBY = "|cFFFF8800",
+    FAR = "|cFFFFFF00",
+    ["NOT DETECTED"] = "|cFF888888",
+}
+
 function HS.Game.ScanPlayer(targetName)
     if state.phase ~= HS.PHASE.SEEKING then return end
     if state.seeker ~= UnitName("player") then return end
@@ -700,19 +709,23 @@ function HS.Game.ScanPlayer(targetName)
     local unit = GetUnitForPlayer(targetName)
     local result
     if not unit then
-        result = "|cFF888888NOT DETECTED|r"
+        result = "NOT DETECTED"
     elseif CheckInteractDistance(unit, 2) then
-        result = "|cFFFF0000CLOSE|r"
+        result = "CLOSE"
     elseif CheckInteractDistance(unit, 1) then
-        result = "|cFFFF8800NEARBY|r"
+        result = "NEARBY"
     elseif UnitInRange(unit) then
-        result = "|cFFFFFF00FAR|r"
+        result = "FAR"
     else
-        result = "|cFF888888NOT DETECTED|r"
+        result = "NOT DETECTED"
     end
 
     state.scanCharges[targetName] = 0
-    RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": " .. result, ChatTypeInfo["RAID_WARNING"])
+    state.scanResults[targetName] = result
+    HS.Comm.Send(HS.Comm.MSG.SCAN_RESULT, targetName .. "|" .. result)
+
+    local color = SCAN_COLORS[result] or "|cFFFFFFFF"
+    RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": " .. color .. result .. "|r", ChatTypeInfo["RAID_WARNING"])
     if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
 end
 
@@ -731,6 +744,7 @@ function HS.Game.StartSeeking()
     state.soundCharges = {}
     state.scanUnlocked = false
     state.scanCharges = {}
+    state.scanResults = {}
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
@@ -1465,6 +1479,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     state.soundCharges = {}
     state.scanUnlocked = false
     state.scanCharges = {}
+    state.scanResults = {}
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
@@ -1649,4 +1664,26 @@ HS.Comm.handlers[HS.Comm.MSG.TRIGGER_SOUND] = function(sender, data)
     local chosen = emotes[math.random(#emotes)]
     HS.Util.Print("Emoting: " .. chosen)
     DoEmote(chosen)
+end
+
+HS.Comm.handlers[HS.Comm.MSG.SCAN_RESULT] = function(sender, data)
+    local parts = HS.Util.Split(data, "|")
+    if #parts < 2 then return end
+    local targetName = parts[1]
+    local result = parts[2]
+
+    state.scanResults[targetName] = result
+
+    local me = UnitName("player")
+    if me == targetName then
+        local color = "|cFFFFFFFF"
+        if result == "CLOSE" then color = "|cFFFF0000"
+        elseif result == "NEARBY" then color = "|cFFFF8800"
+        elseif result == "FAR" then color = "|cFFFFFF00"
+        elseif result == "NOT DETECTED" then color = "|cFF888888"
+        end
+        RaidNotice_AddMessage(RaidWarningFrame, "The seeker scanned you: " .. color .. result .. "|r", ChatTypeInfo["RAID_WARNING"])
+    end
+
+    if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
 end
