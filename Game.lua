@@ -695,7 +695,6 @@ local SCAN_COLORS = {
     CLOSE = "|cFFFF0000",
     NEARBY = "|cFFFF8800",
     FAR = "|cFFFFFF00",
-    ["NOT DETECTED"] = "|cFF888888",
 }
 
 function HS.Game.ScanPlayer(targetName)
@@ -709,15 +708,13 @@ function HS.Game.ScanPlayer(targetName)
     local unit = GetUnitForPlayer(targetName)
     local result
     if not unit then
-        result = "NOT DETECTED"
+        result = "FAR"
     elseif CheckInteractDistance(unit, 2) then
         result = "CLOSE"
     elseif CheckInteractDistance(unit, 1) then
         result = "NEARBY"
-    elseif UnitInRange(unit) then
-        result = "FAR"
     else
-        result = "NOT DETECTED"
+        result = "FAR"
     end
 
     state.scanCharges[targetName] = 0
@@ -1691,7 +1688,6 @@ HS.Comm.handlers[HS.Comm.MSG.SCAN_RESULT] = function(sender, data)
         if result == "CLOSE" then color = "|cFFFF0000"
         elseif result == "NEARBY" then color = "|cFFFF8800"
         elseif result == "FAR" then color = "|cFFFFFF00"
-        elseif result == "NOT DETECTED" then color = "|cFF888888"
         end
         RaidNotice_AddMessage(RaidWarningFrame, "The seeker scanned you: " .. color .. result .. "|r", ChatTypeInfo["RAID_WARNING"])
     end
