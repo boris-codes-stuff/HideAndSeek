@@ -644,7 +644,7 @@ function HS.Game.HideRevealingFrames()
 end
 
 -- ============================================================================
--- SOUND TRIGGERS (seeker can force hiders to emote/yell)
+-- SOUND TRIGGERS (seeker can force hiders to emote)
 -- ============================================================================
 
 function HS.Game.TriggerSound(targetName, soundType)
@@ -661,21 +661,12 @@ function HS.Game.TriggerSound(targetName, soundType)
         return
     end
 
-    if soundType == "YELL" then
-        local charges = state.yellCharges[targetName] or 0
-        if charges <= 0 then
-            HS.Util.Warn("Ping failed: no yell charges for " .. targetName)
-            return
-        end
-        state.yellCharges[targetName] = charges - 1
-    else
-        local charges = state.soundCharges[targetName] or 0
-        if charges <= 0 then
-            HS.Util.Warn("Ping failed: no emote charges for " .. targetName)
-            return
-        end
-        state.soundCharges[targetName] = charges - 1
+    local charges = state.soundCharges[targetName] or 0
+    if charges <= 0 then
+        HS.Util.Warn("Ping failed: no emote charges for " .. targetName)
+        return
     end
+    state.soundCharges[targetName] = charges - 1
 
     HS.Util.Print("Ping sent to " .. targetName .. " (" .. soundType .. ")")
     HS.Comm.Send(HS.Comm.MSG.TRIGGER_SOUND, targetName .. "|" .. soundType)
@@ -1159,26 +1150,26 @@ function HS.Game.OnUpdate()
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
 
-        -- +1 yell charge at 1:00 remaining
+        -- +1 emote charge at 1:00 remaining
         if not HS.Game._bonusYellGiven and remaining <= 60 then
             HS.Game._bonusYellGiven = true
             for name, player in pairs(state.players) do
                 if player.role == HS.ROLE.HIDER then
-                    state.yellCharges[name] = (state.yellCharges[name] or 0) + 1
+                    state.soundCharges[name] = (state.soundCharges[name] or 0) + 1
                 end
             end
             if state.seeker == me then
-                RaidNotice_AddMessage(RaidWarningFrame, "Yell unlocked!", ChatTypeInfo["RAID_WARNING"])
+                RaidNotice_AddMessage(RaidWarningFrame, "+1 Ping charge!", ChatTypeInfo["RAID_WARNING"])
             end
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
 
-        -- Auto-yell at 0:15 remaining for all alive hiders
+        -- Auto-emote at 0:15 remaining for all alive hiders
         if not HS.Game._autoYellDone and remaining <= 15 then
             HS.Game._autoYellDone = true
             local myPlayer = state.players[me]
             if myPlayer and myPlayer.role == HS.ROLE.HIDER then
-                SendChatMessage("I'M HERE!", "YELL")
+                DoEmote("ROAR")
             end
         end
     end
@@ -1609,12 +1600,8 @@ HS.Comm.handlers[HS.Comm.MSG.TRIGGER_SOUND] = function(sender, data)
     if not state.players[targetName] or state.players[targetName].role ~= HS.ROLE.HIDER then return end
 
     HS.Util.Print("Ping received! Doing " .. soundType)
-    if soundType == "YELL" then
-        SendChatMessage("I'M HERE!", "YELL")
-    else
-        local emotes = {"WHISTLE", "CHICKEN", "COUGH", "TRAIN"}
-        local chosen = emotes[math.random(#emotes)]
-        HS.Util.Print("Emoting: " .. chosen)
-        DoEmote(chosen)
-    end
+    local emotes = {"WHISTLE", "CHICKEN", "COUGH", "TRAIN", "ROAR"}
+    local chosen = emotes[math.random(#emotes)]
+    HS.Util.Print("Emoting: " .. chosen)
+    DoEmote(chosen)
 end
