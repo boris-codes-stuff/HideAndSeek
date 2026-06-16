@@ -24,7 +24,7 @@ HS.Game.state = {
     nextSeeker = nil,
     soundCharges = {},
     scanUnlocked = false,
-    lastScanTime = 0,
+    scanCharges = {},
 }
 
 local state = HS.Game.state
@@ -65,7 +65,7 @@ function HS.Game.Reset()
     state.nextSeeker = nil
     state.soundCharges = {}
     state.scanUnlocked = false
-    state.lastScanTime = 0
+    state.scanCharges = {}
     ClearRaidIcons()
 
     HS.Game.RestoreUI()
@@ -694,23 +694,14 @@ function HS.Game.ScanPlayer(targetName)
     if state.seeker ~= UnitName("player") then return end
     if not state.scanUnlocked then return end
 
-    local now = GetTime()
-    local cd = HS.DEFAULTS.scanCooldown - (now - (state.lastScanTime or 0))
-    if cd > 0 then
-        RaidNotice_AddMessage(RaidWarningFrame, "Scan cooldown: " .. math.ceil(cd) .. "s", ChatTypeInfo["RAID_WARNING"])
-        return
-    end
+    local charges = state.scanCharges[targetName] or 0
+    if charges <= 0 then return end
 
     local unit = GetUnitForPlayer(targetName)
-    if not unit then
-        RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": NOT DETECTED", ChatTypeInfo["RAID_WARNING"])
-        state.lastScanTime = now
-        if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
-        return
-    end
-
     local result
-    if CheckInteractDistance(unit, 2) then
+    if not unit then
+        result = "|cFF888888NOT DETECTED|r"
+    elseif CheckInteractDistance(unit, 2) then
         result = "|cFFFF0000CLOSE|r"
     elseif CheckInteractDistance(unit, 1) then
         result = "|cFFFF8800NEARBY|r"
@@ -720,8 +711,8 @@ function HS.Game.ScanPlayer(targetName)
         result = "|cFF888888NOT DETECTED|r"
     end
 
+    state.scanCharges[targetName] = 0
     RaidNotice_AddMessage(RaidWarningFrame, targetName .. ": " .. result, ChatTypeInfo["RAID_WARNING"])
-    state.lastScanTime = now
     if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
 end
 
@@ -739,7 +730,7 @@ function HS.Game.StartSeeking()
 
     state.soundCharges = {}
     state.scanUnlocked = false
-    state.lastScanTime = 0
+    state.scanCharges = {}
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
@@ -1209,6 +1200,7 @@ function HS.Game.OnUpdate()
             for name, player in pairs(state.players) do
                 if player.role == HS.ROLE.HIDER then
                     state.soundCharges[name] = (state.soundCharges[name] or 0) + 1
+                    state.scanCharges[name] = 1
                 end
             end
             if state.seeker == me then
@@ -1472,7 +1464,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
 
     state.soundCharges = {}
     state.scanUnlocked = false
-    state.lastScanTime = 0
+    state.scanCharges = {}
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false

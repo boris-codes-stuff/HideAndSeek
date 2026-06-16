@@ -794,15 +794,10 @@ function HS.UI.UpdateHUD()
                 else
                     r.triggerBtn:Hide()
                 end
-                if state.scanUnlocked then
-                    local scanCD = HS.DEFAULTS.scanCooldown - (GetTime() - (state.lastScanTime or 0))
-                    if scanCD > 0 then
-                        r.scanBtn:SetText(math.ceil(scanCD) .. "s")
-                        r.scanBtn:Disable()
-                    else
-                        r.scanBtn:SetText("Scan")
-                        r.scanBtn:Enable()
-                    end
+                local scanCharges = state.scanCharges and state.scanCharges[p.name] or 0
+                if scanCharges > 0 then
+                    r.scanBtn:SetText("Scan")
+                    r.scanBtn:Enable()
                     r.scanBtn:SetScript("OnClick", function()
                         HS.Game.ScanPlayer(p.name)
                     end)
