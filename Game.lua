@@ -749,6 +749,7 @@ function HS.Game.StartSeeking()
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
+    HS.Game._scanSoundPlayed = false
     for name, player in pairs(state.players) do
         if player.role == HS.ROLE.HIDER then
             state.soundCharges[name] = 1
@@ -1208,6 +1209,12 @@ function HS.Game.OnUpdate()
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
 
+        -- Spidey sense sound at 1:03 remaining (3s lead-in before scan unlock)
+        if not HS.Game._scanSoundPlayed and remaining <= 63 then
+            HS.Game._scanSoundPlayed = true
+            PlaySoundFile("Interface\\AddOns\\HideAndSeek\\spideysense.mp3", "Master")
+        end
+
         -- Unlock scan + extra emote at 1:00 remaining
         if not HS.Game._bonusYellGiven and remaining <= 60 then
             HS.Game._bonusYellGiven = true
@@ -1218,9 +1225,7 @@ function HS.Game.OnUpdate()
                     state.scanCharges[name] = 1
                 end
             end
-            if state.seeker == me then
-                RaidNotice_AddMessage(RaidWarningFrame, "Scan unlocked! +1 Ping!", ChatTypeInfo["RAID_WARNING"])
-            end
+            RaidNotice_AddMessage(RaidWarningFrame, "Proximity scans unlocked!", ChatTypeInfo["RAID_WARNING"])
             if HS.UI and HS.UI.UpdateHUD then HS.UI.UpdateHUD() end
         end
 
@@ -1484,6 +1489,7 @@ HS.Comm.handlers[HS.Comm.MSG.START_SEEK] = function(sender, data)
     HS.Game._bonusEmoteGiven = false
     HS.Game._bonusYellGiven = false
     HS.Game._autoYellDone = false
+    HS.Game._scanSoundPlayed = false
     for name, player in pairs(state.players) do
         if player.role == HS.ROLE.HIDER then
             state.soundCharges[name] = 1
